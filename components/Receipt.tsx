@@ -22,12 +22,14 @@ export default function Receipt({
           <div className="mb-3 text-center">
             <div className="text-2xl">🥥</div>
             <h2 className="text-lg font-bold">Amarah Fresh Buko&apos;s</h2>
-            <p className="text-xs text-stone-500">Official Receipt</p>
+            <p className="mt-0.5 inline-block rounded bg-brand-light px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-dark">
+              Sales Invoice
+            </p>
           </div>
 
           <div className="mb-2 space-y-0.5 text-xs text-stone-500">
             <div className="flex justify-between">
-              <span>Ref</span>
+              <span>Invoice No.</span>
               <span className="font-mono font-semibold text-stone-700">
                 {sale.reference}
               </span>

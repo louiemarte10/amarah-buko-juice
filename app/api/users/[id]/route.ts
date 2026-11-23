@@ -15,7 +15,12 @@ export async function PATCH(
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target) return notFound("User not found");
 
-  let body: { name?: string; role?: string; active?: boolean; password?: string };
+  let body: {
+    name?: string;
+    staffRoleId?: string;
+    active?: boolean;
+    password?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -28,9 +33,15 @@ export async function PATCH(
     if (!name) return badRequest("Name cannot be empty");
     data.name = name;
   }
-  if (body.role !== undefined) data.role = body.role === "ADMIN" ? "ADMIN" : "CASHIER";
+  if (body.staffRoleId !== undefined) {
+    const role = await prisma.staffRole.findUnique({
+      where: { id: body.staffRoleId },
+    });
+    if (!role) return badRequest("That role no longer exists");
+    data.staffRoleId = role.id;
+    data.role = role.isAdmin ? "ADMIN" : "CASHIER"; // keep legacy tier in sync
+  }
   if (body.active !== undefined) {
-    // Don't let an admin lock themselves out.
     if (target.id === user.sub && body.active === false) {
       return badRequest("You cannot deactivate your own account");
     }
@@ -45,7 +56,15 @@ export async function PATCH(
   const updated = await prisma.user.update({
     where: { id },
     data,
-    select: { id: true, name: true, email: true, role: true, active: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      active: true,
+      staffRoleId: true,
+      staffRole: { select: { id: true, name: true, isAdmin: true } },
+    },
   });
   return NextResponse.json({ user: updated });
 }

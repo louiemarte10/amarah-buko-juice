@@ -11,6 +11,10 @@ export default async function AppLayout({
   if (!user) redirect("/login");
 
   return (
-    <AppShell user={{ name: user.name, role: user.role }}>{children}</AppShell>
+    <AppShell
+      user={{ name: user.name, role: user.role, roleName: user.roleName }}
+    >
+      {children}
+    </AppShell>
   );
 }

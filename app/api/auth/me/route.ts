@@ -6,6 +6,11 @@ export async function GET() {
   const user = await getCurrentUser();
   if (!user) return unauthorized();
   return NextResponse.json({
-    user: { id: user.sub, name: user.name, role: user.role },
+    user: {
+      id: user.sub,
+      name: user.name,
+      role: user.role,
+      roleName: user.roleName,
+    },
   });
 }

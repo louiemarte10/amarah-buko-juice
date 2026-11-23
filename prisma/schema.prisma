@@ -27,12 +27,28 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
-  role         Role     @default(CASHIER)
+  role         Role     @default(CASHIER) // legacy permission tier (ADMIN/CASHIER), kept for safety
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  staffRoleId String?
+  staffRole   StaffRole? @relation(fields: [staffRoleId], references: [id], onDelete: SetNull)
+
   sales Sale[]
+
+  @@index([staffRoleId])
+}
+
+// Custom staff roles (labels). `isAdmin` decides the permission tier:
+// true -> full admin access, false -> cashier-level access.
+model StaffRole {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  users User[]
 }
 
 model Category {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api, type Supplier } from "@/lib/client";
 import ConfirmModal, { type ConfirmState } from "@/components/ConfirmModal";
+import { SkeletonCards } from "@/components/Skeleton";
 
 type Form = {
   id?: string;
@@ -93,7 +94,7 @@ export default function SuppliersPage() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         {loading ? (
-          <p className="text-stone-400">Loading…</p>
+          <SkeletonCards count={4} />
         ) : items.length === 0 ? (
           <p className="text-stone-400">No suppliers yet.</p>
         ) : (

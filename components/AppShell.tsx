@@ -18,13 +18,14 @@ const NAV: NavItem[] = [
   { href: "/suppliers", label: "Suppliers", icon: "🚚", admin: true },
   { href: "/sales", label: "Sales History", icon: "💸" },
   { href: "/users", label: "Staff", icon: "👥", admin: true },
+  { href: "/guide", label: "How to Use", icon: "📘" },
 ];
 
 export default function AppShell({
   user,
   children,
 }: {
-  user: { name: string; role: Role };
+  user: { name: string; role: Role; roleName: string };
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -82,9 +83,7 @@ export default function AppShell({
           <p className="truncate text-sm font-semibold text-stone-700">
             {user.name}
           </p>
-          <p className="text-xs text-stone-400">
-            {user.role === "ADMIN" ? "Administrator" : "Cashier"}
-          </p>
+          <p className="text-xs text-stone-400">{user.roleName}</p>
         </div>
         <button
           onClick={logout}

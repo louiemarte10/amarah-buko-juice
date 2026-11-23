@@ -9,6 +9,7 @@ import {
 } from "@/lib/client";
 import { centsToPesos, formatPeso } from "@/lib/money";
 import ConfirmModal, { type ConfirmState } from "@/components/ConfirmModal";
+import { SkeletonRows } from "@/components/Skeleton";
 
 type FormState = {
   id?: string;
@@ -272,11 +273,7 @@ export default function InventoryPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-stone-400">
-                  Loading…
-                </td>
-              </tr>
+              <SkeletonRows rows={6} cols={6} />
             ) : visible.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-stone-400">

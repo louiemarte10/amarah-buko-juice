@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api, type Category } from "@/lib/client";
 import ConfirmModal, { type ConfirmState } from "@/components/ConfirmModal";
+import { Skeleton } from "@/components/Skeleton";
 
 export default function CategoriesPage() {
   const [items, setItems] = useState<Category[]>([]);
@@ -96,7 +97,17 @@ export default function CategoriesPage() {
 
       <div className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-surface shadow-sm">
         {loading ? (
-          <p className="p-6 text-center text-stone-400">Loading…</p>
+          <div className="space-y-4 p-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <Skeleton className="h-4 w-24" />
+              </div>
+            ))}
+          </div>
         ) : items.length === 0 ? (
           <p className="p-6 text-center text-stone-400">No categories yet.</p>
         ) : (

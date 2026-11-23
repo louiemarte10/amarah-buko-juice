@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api, type Sale } from "@/lib/client";
 import { formatPeso } from "@/lib/money";
 import Receipt from "@/components/Receipt";
+import { SkeletonRows } from "@/components/Skeleton";
 
 export default function SalesPage() {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -46,11 +47,7 @@ export default function SalesPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-stone-400">
-                  Loading…
-                </td>
-              </tr>
+              <SkeletonRows rows={6} cols={6} />
             ) : sales.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-stone-400">

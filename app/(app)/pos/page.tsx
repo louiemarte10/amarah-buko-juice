@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api, type Category, type Product, type Sale } from "@/lib/client";
 import { formatPeso } from "@/lib/money";
 import Receipt from "@/components/Receipt";
+import { SkeletonCards } from "@/components/Skeleton";
 
 type Line = { product: Product; quantity: number };
 
@@ -160,7 +161,9 @@ export default function PosPage() {
         </div>
 
         {loading ? (
-          <p className="text-stone-400">Loading products…</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+            <SkeletonCards count={8} />
+          </div>
         ) : filtered.length === 0 ? (
           <p className="text-stone-400">No products found.</p>
         ) : (

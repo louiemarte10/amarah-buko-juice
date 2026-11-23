@@ -81,6 +81,13 @@ export type Sale = {
   items: SaleItem[];
 };
 
+export type StaffRole = {
+  id: string;
+  name: string;
+  isAdmin: boolean;
+  _count?: { users: number };
+};
+
 export type UserRow = {
   id: string;
   name: string;
@@ -88,4 +95,6 @@ export type UserRow = {
   role: Role;
   active: boolean;
   createdAt?: string;
+  staffRoleId?: string | null;
+  staffRole?: { id: string; name: string; isAdmin: boolean } | null;
 };

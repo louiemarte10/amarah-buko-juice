@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { formatPeso } from "@/lib/money";
+import { Skeleton } from "@/components/Skeleton";
 
 type Dashboard = {
   today: { revenueCents: number; count: number };
@@ -46,7 +47,21 @@ export default function DashboardPage() {
   }, []);
 
   if (loading || !data) {
-    return <p className="text-stone-400">Loading dashboard…</p>;
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-7 w-40" />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-2xl" />
+          ))}
+        </div>
+        <Skeleton className="h-52 rounded-2xl" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Skeleton className="h-56 rounded-2xl" />
+          <Skeleton className="h-56 rounded-2xl" />
+        </div>
+      </div>
+    );
   }
 
   const maxBar = Math.max(1, ...data.week.series.map((s) => s.revenueCents));

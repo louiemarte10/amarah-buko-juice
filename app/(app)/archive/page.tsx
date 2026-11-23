@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api, type Product } from "@/lib/client";
 import { formatPeso } from "@/lib/money";
 import ConfirmModal, { type ConfirmState } from "@/components/ConfirmModal";
+import { SkeletonRows } from "@/components/Skeleton";
 
 export default function ArchivePage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -156,11 +157,7 @@ export default function ArchivePage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-stone-400">
-                  Loading…
-                </td>
-              </tr>
+              <SkeletonRows rows={5} cols={6} />
             ) : products.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-stone-400">

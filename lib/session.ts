@@ -9,7 +9,8 @@ const MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 export type SessionPayload = {
   sub: string; // user id
   name: string;
-  role: "ADMIN" | "CASHIER";
+  role: "ADMIN" | "CASHIER"; // permission tier (derived from the staff role's isAdmin)
+  roleName: string; // display label, e.g. "Administrator", "Manager", "Cashier"
 };
 
 function getSecret(): Uint8Array {
@@ -23,7 +24,11 @@ function getSecret(): Uint8Array {
 }
 
 export async function signSession(payload: SessionPayload): Promise<string> {
-  return new SignJWT({ name: payload.name, role: payload.role })
+  return new SignJWT({
+    name: payload.name,
+    role: payload.role,
+    roleName: payload.roleName,
+  })
     .setProtectedHeader({ alg: ALG })
     .setSubject(payload.sub)
     .setIssuedAt()
@@ -42,6 +47,7 @@ export async function verifySession(
       sub: payload.sub,
       name: (payload.name as string) ?? "",
       role: (payload.role as "ADMIN" | "CASHIER") ?? "CASHIER",
+      roleName: (payload.roleName as string) ?? "Cashier",
     };
   } catch {
     return null;

@@ -17,7 +17,10 @@ export async function POST(req: NextRequest) {
     return badRequest("Email and password are required");
   }
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { staffRole: true },
+  });
   if (!user || !user.active || !(await verifyPassword(password, user.passwordHash))) {
     return NextResponse.json(
       { error: "Invalid email or password" },
@@ -25,9 +28,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  await setSessionCookie({ sub: user.id, name: user.name, role: user.role });
+  const isAdmin = user.staffRole ? user.staffRole.isAdmin : user.role === "ADMIN";
+  const roleName =
+    user.staffRole?.name ?? (user.role === "ADMIN" ? "Administrator" : "Cashier");
+
+  await setSessionCookie({
+    sub: user.id,
+    name: user.name,
+    role: isAdmin ? "ADMIN" : "CASHIER",
+    roleName,
+  });
 
   return NextResponse.json({
-    user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: isAdmin ? "ADMIN" : "CASHIER",
+      roleName,
+    },
   });
 }

@@ -11,6 +11,18 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("Seeding Amarah Buko Juice…");
 
+  // --- Roles ---------------------------------------------------------------
+  const adminRole = await prisma.staffRole.upsert({
+    where: { name: "Administrator" },
+    update: {},
+    create: { name: "Administrator", isAdmin: true },
+  });
+  const cashierRole = await prisma.staffRole.upsert({
+    where: { name: "Cashier" },
+    update: {},
+    create: { name: "Cashier", isAdmin: false },
+  });
+
   // --- Users ---------------------------------------------------------------
   const adminPassword = await bcrypt.hash("admin123", 10);
   const cashierPassword = await bcrypt.hash("cashier123", 10);
@@ -23,6 +35,7 @@ async function main() {
       email: "admin@amarah.local",
       passwordHash: adminPassword,
       role: "ADMIN",
+      staffRoleId: adminRole.id,
     },
   });
   await prisma.user.upsert({
@@ -33,6 +46,7 @@ async function main() {
       email: "cashier@amarah.local",
       passwordHash: cashierPassword,
       role: "CASHIER",
+      staffRoleId: cashierRole.id,
     },
   });
 
