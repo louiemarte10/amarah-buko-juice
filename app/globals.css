@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+/* Amarah Buko Juice — light, fresh coconut theme */
+@theme {
+  --color-brand: #15803d; /* fresh green */
+  --color-brand-dark: #166534;
+  --color-brand-light: #dcfce7;
+  --color-cream: #faf8f2;
+  --color-coconut: #8b5e34; /* husk brown */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --background: #f5f3ec;
+  --foreground: #1b2a21;
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Thin, tidy scrollbars for product lists */
+* {
+  scrollbar-width: thin;
+}

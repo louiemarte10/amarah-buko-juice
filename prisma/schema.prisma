@@ -1,0 +1,113 @@
+// Amarah Buko Juice — POS + Inventory
+// Prisma 7 schema. Money is stored as integer centavos (₱1 = 100) to avoid
+// floating-point rounding; the API layer converts to/from pesos.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  CASHIER
+}
+
+enum PaymentMethod {
+  CASH
+  GCASH
+  CARD
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(CASHIER)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sales Sale[]
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  products  Product[]
+}
+
+model Supplier {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  contact   String?
+  phone     String?
+  email     String?
+  createdAt DateTime  @default(now())
+  products  Product[]
+}
+
+model Product {
+  id                String   @id @default(cuid())
+  name              String
+  sku               String?  @unique
+  priceCents        Int // selling price in centavos
+  costCents         Int      @default(0) // cost in centavos
+  stock             Int      @default(0)
+  lowStockThreshold Int      @default(10)
+  unit              String   @default("pc") // pc, cup, bottle, etc.
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  saleItems SaleItem[]
+
+  @@index([categoryId])
+  @@index([supplierId])
+}
+
+model Sale {
+  id            String        @id @default(cuid())
+  reference     String        @unique // human-friendly receipt no.
+  subtotalCents Int
+  discountCents Int           @default(0)
+  totalCents    Int
+  paymentMethod PaymentMethod @default(CASH)
+  cashCents     Int           @default(0) // amount tendered
+  changeCents   Int           @default(0)
+  createdAt     DateTime      @default(now())
+
+  cashierId String
+  cashier   User   @relation(fields: [cashierId], references: [id])
+
+  items SaleItem[]
+
+  @@index([cashierId])
+  @@index([createdAt])
+}
+
+model SaleItem {
+  id          String @id @default(cuid())
+  saleId      String
+  sale        Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  productName String // snapshot at time of sale
+  unitCents   Int // unit price snapshot
+  quantity    Int
+  lineCents   Int // unitCents * quantity
+
+  @@index([saleId])
+  @@index([productId])
+}

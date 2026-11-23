@@ -1,0 +1,117 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { api, type Category } from "@/lib/client";
+
+export default function CategoriesPage() {
+  const [items, setItems] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+
+  async function load() {
+    setLoading(true);
+    try {
+      const { categories } = await api.get<{ categories: Category[] }>(
+        "/api/categories",
+      );
+      setItems(categories);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    try {
+      await api.post("/api/categories", { name });
+      setName("");
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not add");
+    }
+  }
+
+  async function rename(c: Category) {
+    const next = prompt("Rename category", c.name);
+    if (!next || next === c.name) return;
+    try {
+      await api.patch(`/api/categories/${c.id}`, { name: next });
+      load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not rename");
+    }
+  }
+
+  async function remove(c: Category) {
+    if (!confirm(`Delete category "${c.name}"? Products keep, but become uncategorised.`))
+      return;
+    await api.del(`/api/categories/${c.id}`);
+    load();
+  }
+
+  return (
+    <div className="max-w-2xl">
+      <h1 className="mb-4 text-xl font-bold text-stone-800">Categories</h1>
+
+      <form onSubmit={add} className="mb-5 flex gap-2">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="New category name"
+          className="flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2 outline-none focus:border-brand"
+        />
+        <button
+          type="submit"
+          disabled={!name.trim()}
+          className="rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+        >
+          Add
+        </button>
+      </form>
+      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+
+      <div className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
+        {loading ? (
+          <p className="p-6 text-center text-stone-400">Loading…</p>
+        ) : items.length === 0 ? (
+          <p className="p-6 text-center text-stone-400">No categories yet.</p>
+        ) : (
+          items.map((c) => (
+            <div
+              key={c.id}
+              className="flex items-center justify-between px-4 py-3"
+            >
+              <div>
+                <p className="font-medium text-stone-800">{c.name}</p>
+                <p className="text-xs text-stone-400">
+                  {c._count?.products ?? 0} product
+                  {(c._count?.products ?? 0) === 1 ? "" : "s"}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => rename(c)}
+                  className="text-sm font-medium text-brand hover:underline"
+                >
+                  Rename
+                </button>
+                <button
+                  onClick={() => remove(c)}
+                  className="text-sm font-medium text-red-500 hover:underline"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
