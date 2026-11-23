@@ -8,8 +8,8 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Amarah Buko Juice — POS & Inventory",
-  description: "Point of Sale and Inventory system for Amarah Buko Juice",
+  title: "Amarah Fresh Buko's — POS & Inventory",
+  description: "Point of Sale and Inventory system for Amarah Fresh Buko's",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

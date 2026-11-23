@@ -21,7 +21,7 @@ export default function Receipt({
         <div id="receipt" className="text-stone-800">
           <div className="mb-3 text-center">
             <div className="text-2xl">🥥</div>
-            <h2 className="text-lg font-bold">Amarah Buko Juice</h2>
+            <h2 className="text-lg font-bold">Amarah Fresh Buko&apos;s</h2>
             <p className="text-xs text-stone-500">Official Receipt</p>
           </div>
 

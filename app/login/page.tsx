@@ -35,7 +35,7 @@ export default function LoginPage() {
             🥥
           </div>
           <h1 className="text-2xl font-bold text-brand-dark">
-            Amarah Buko Juice
+            Amarah Fresh Buko&apos;s
           </h1>
           <p className="text-sm text-stone-500">POS &amp; Inventory</p>
         </div>

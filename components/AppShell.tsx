@@ -68,7 +68,7 @@ export default function AppShell({
         </span>
         <div>
           <p className="text-sm font-bold leading-tight text-brand-dark">
-            Amarah Buko
+            Amarah Fresh Buko&apos;s
           </p>
           <p className="text-xs text-stone-400">POS &amp; Inventory</p>
         </div>
@@ -123,7 +123,7 @@ export default function AppShell({
           >
             ☰
           </button>
-          <span className="font-bold text-brand-dark">Amarah Buko</span>
+          <span className="font-bold text-brand-dark">Amarah Fresh Buko&apos;s</span>
         </header>
 
         <main className="flex-1 p-4 sm:p-6">{children}</main>
