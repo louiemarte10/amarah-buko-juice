@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { Role } from "@/lib/client";
 import { api } from "@/lib/client";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type NavItem = { href: string; label: string; icon: string; admin?: boolean };
 
@@ -12,6 +13,7 @@ const NAV: NavItem[] = [
   { href: "/pos", label: "Point of Sale", icon: "🧾" },
   { href: "/dashboard", label: "Dashboard", icon: "📊", admin: true },
   { href: "/inventory", label: "Inventory", icon: "📦", admin: true },
+  { href: "/archive", label: "Archived", icon: "🗃️", admin: true },
   { href: "/categories", label: "Categories", icon: "🏷️", admin: true },
   { href: "/suppliers", label: "Suppliers", icon: "🚚", admin: true },
   { href: "/sales", label: "Sales History", icon: "💸" },
@@ -75,6 +77,7 @@ export default function AppShell({
       </div>
       {nav}
       <div className="border-t border-stone-100 p-3">
+        <ThemeToggle />
         <div className="mb-2 px-2">
           <p className="truncate text-sm font-semibold text-stone-700">
             {user.name}
@@ -96,7 +99,7 @@ export default function AppShell({
   return (
     <div className="flex min-h-screen bg-cream">
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-64 flex-col border-r border-stone-200 bg-white md:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 flex-col border-r border-stone-200 bg-surface md:flex">
         {sidebarInner}
       </aside>
 
@@ -107,7 +110,7 @@ export default function AppShell({
             className="absolute inset-0 bg-black/40"
             onClick={() => setOpen(false)}
           />
-          <aside className="absolute left-0 top-0 flex h-full w-64 flex-col bg-white shadow-xl">
+          <aside className="absolute left-0 top-0 flex h-full w-64 flex-col bg-surface shadow-xl">
             {sidebarInner}
           </aside>
         </div>
@@ -115,7 +118,7 @@ export default function AppShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
-        <header className="flex items-center gap-3 border-b border-stone-200 bg-white px-4 py-3 md:hidden">
+        <header className="flex items-center gap-3 border-b border-stone-200 bg-surface px-4 py-3 md:hidden">
           <button
             onClick={() => setOpen(true)}
             className="rounded-lg p-2 text-stone-600 hover:bg-stone-100"

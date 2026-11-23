@@ -10,11 +10,19 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim();
+  // `active=true` (legacy, used by POS) or `status=active|archived|all`
+  const status = searchParams.get("status");
   const activeOnly = searchParams.get("active") === "true";
+  const activeFilter =
+    activeOnly || status === "active"
+      ? { active: true }
+      : status === "archived"
+        ? { active: false }
+        : {};
 
   const products = await prisma.product.findMany({
     where: {
-      ...(activeOnly ? { active: true } : {}),
+      ...activeFilter,
       ...(q
         ? {
             OR: [

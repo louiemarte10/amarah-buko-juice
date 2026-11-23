@@ -17,7 +17,7 @@ export default function Receipt({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 print:static print:bg-white print:p-0">
-      <div className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-2xl print:max-w-full print:shadow-none">
+      <div className="w-full max-w-xs rounded-2xl bg-surface p-5 shadow-2xl print:max-w-full print:shadow-none print:bg-white">
         <div id="receipt" className="text-stone-800">
           <div className="mb-3 text-center">
             <div className="text-2xl">🥥</div>

@@ -82,7 +82,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 7-day chart */}
-      <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+      <div className="rounded-2xl border border-stone-200 bg-surface p-5 shadow-sm">
         <h2 className="mb-4 font-bold text-stone-800">Revenue — last 7 days</h2>
         <div className="flex items-end gap-2" style={{ height: 180 }}>
           {data.week.series.map((s) => {
@@ -109,7 +109,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Best sellers */}
-        <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-stone-200 bg-surface p-5 shadow-sm">
           <h2 className="mb-3 font-bold text-stone-800">
             Best Sellers (30 days)
           </h2>
@@ -136,7 +136,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Low stock */}
-        <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-stone-200 bg-surface p-5 shadow-sm">
           <h2 className="mb-3 font-bold text-stone-800">Low Stock Alerts</h2>
           {data.lowStock.length === 0 ? (
             <p className="text-sm text-stone-400">Everything well stocked 🎉</p>
@@ -183,7 +183,7 @@ function Stat({
           ? "border-brand bg-brand text-white"
           : warn
             ? "border-amber-200 bg-amber-50"
-            : "border-stone-200 bg-white"
+            : "border-stone-200 bg-surface"
       }`}
     >
       <p

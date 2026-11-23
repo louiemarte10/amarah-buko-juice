@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, type Supplier } from "@/lib/client";
+import ConfirmModal, { type ConfirmState } from "@/components/ConfirmModal";
 
 type Form = {
   id?: string;
@@ -18,6 +19,8 @@ export default function SuppliersPage() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<Form | null>(null);
   const [error, setError] = useState("");
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -51,10 +54,26 @@ export default function SuppliersPage() {
     }
   }
 
-  async function remove(s: Supplier) {
-    if (!confirm(`Delete supplier "${s.name}"?`)) return;
-    await api.del(`/api/suppliers/${s.id}`);
-    load();
+  function requestRemove(s: Supplier) {
+    setConfirm({
+      title: "Delete supplier",
+      message: `Delete "${s.name}"? Their products stay, but lose this supplier link.`,
+      confirmLabel: "Delete",
+      danger: true,
+      onConfirm: async () => {
+        setConfirmLoading(true);
+        try {
+          await api.del(`/api/suppliers/${s.id}`);
+          setConfirm(null);
+          load();
+        } catch (err) {
+          alert(err instanceof Error ? err.message : "Could not delete");
+          setConfirm(null);
+        } finally {
+          setConfirmLoading(false);
+        }
+      },
+    });
   }
 
   return (
@@ -81,7 +100,7 @@ export default function SuppliersPage() {
           items.map((s) => (
             <div
               key={s.id}
-              className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm"
+              className="rounded-xl border border-stone-200 bg-surface p-4 shadow-sm"
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -115,7 +134,7 @@ export default function SuppliersPage() {
                   Edit
                 </button>
                 <button
-                  onClick={() => remove(s)}
+                  onClick={() => requestRemove(s)}
                   className="text-sm font-medium text-red-500 hover:underline"
                 >
                   Delete
@@ -128,7 +147,7 @@ export default function SuppliersPage() {
 
       {form && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl">
             <h2 className="mb-4 text-lg font-bold text-stone-800">
               {form.id ? "Edit Supplier" : "New Supplier"}
             </h2>
@@ -176,6 +195,12 @@ export default function SuppliersPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        state={confirm}
+        loading={confirmLoading}
+        onClose={() => setConfirm(null)}
+      />
     </div>
   );
 }

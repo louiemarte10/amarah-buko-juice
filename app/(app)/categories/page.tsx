@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { api, type Category } from "@/lib/client";
+import ConfirmModal, { type ConfirmState } from "@/components/ConfirmModal";
 
 export default function CategoriesPage() {
   const [items, setItems] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -48,11 +51,26 @@ export default function CategoriesPage() {
     }
   }
 
-  async function remove(c: Category) {
-    if (!confirm(`Delete category "${c.name}"? Products keep, but become uncategorised.`))
-      return;
-    await api.del(`/api/categories/${c.id}`);
-    load();
+  function requestRemove(c: Category) {
+    setConfirm({
+      title: "Delete category",
+      message: `Delete "${c.name}"? Products keep, but become uncategorised.`,
+      confirmLabel: "Delete",
+      danger: true,
+      onConfirm: async () => {
+        setConfirmLoading(true);
+        try {
+          await api.del(`/api/categories/${c.id}`);
+          setConfirm(null);
+          load();
+        } catch (err) {
+          alert(err instanceof Error ? err.message : "Could not delete");
+          setConfirm(null);
+        } finally {
+          setConfirmLoading(false);
+        }
+      },
+    });
   }
 
   return (
@@ -64,7 +82,7 @@ export default function CategoriesPage() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="New category name"
-          className="flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2 outline-none focus:border-brand"
+          className="flex-1 rounded-lg border border-stone-300 bg-surface px-4 py-2 outline-none focus:border-brand"
         />
         <button
           type="submit"
@@ -76,7 +94,7 @@ export default function CategoriesPage() {
       </form>
       {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
 
-      <div className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
+      <div className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-surface shadow-sm">
         {loading ? (
           <p className="p-6 text-center text-stone-400">Loading…</p>
         ) : items.length === 0 ? (
@@ -102,7 +120,7 @@ export default function CategoriesPage() {
                   Rename
                 </button>
                 <button
-                  onClick={() => remove(c)}
+                  onClick={() => requestRemove(c)}
                   className="text-sm font-medium text-red-500 hover:underline"
                 >
                   Delete
@@ -112,6 +130,12 @@ export default function CategoriesPage() {
           ))
         )}
       </div>
+
+      <ConfirmModal
+        state={confirm}
+        loading={confirmLoading}
+        onClose={() => setConfirm(null)}
+      />
     </div>
   );
 }

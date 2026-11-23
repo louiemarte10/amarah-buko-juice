@@ -1,11 +1,15 @@
 @import "tailwindcss";
 
-/* Amarah Buko Juice — light, fresh coconut theme */
+/* Amarah Fresh Buko's — fresh coconut theme.
+   Dark mode is applied by overriding the neutral/accent color tokens under
+   :root[data-theme="dark"], so every utility (bg-white→bg-surface, text-stone-*,
+   borders, hover states) re-themes automatically. */
 @theme {
   --color-brand: #15803d; /* fresh green */
   --color-brand-dark: #166534;
   --color-brand-light: #dcfce7;
   --color-cream: #faf8f2;
+  --color-surface: #ffffff;
   --color-coconut: #8b5e34; /* husk brown */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
@@ -14,6 +18,38 @@
   --background: #f5f3ec;
   --foreground: #1b2a21;
   color-scheme: light;
+}
+
+/* ── Dark theme: override the neutral + accent tokens the whole app uses ── */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+
+  --color-surface: #1e293b;
+  --color-cream: #0f172a;
+
+  --color-stone-50: #22304a;
+  --color-stone-100: #2a3a56;
+  --color-stone-200: #384a68;
+  --color-stone-300: #4a5c7e;
+  --color-stone-400: #8da2c0;
+  --color-stone-500: #a7b6cf;
+  --color-stone-600: #c3cfe3;
+  --color-stone-700: #dde5f2;
+  --color-stone-800: #eef2f9;
+
+  --color-brand-dark: #4ade80;
+  --color-brand-light: #14532d;
+
+  --color-amber-50: #3a2e12;
+  --color-amber-200: #5a4a1e;
+  --color-amber-600: #fbbf24;
+  --color-amber-700: #fcd34d;
+
+  /* only dark-tint the light red surfaces; keep red-500/600/700 for buttons/links */
+  --color-red-50: #3a1d22;
+  --color-red-100: #4a2228;
 }
 
 html,
@@ -27,7 +63,15 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Thin, tidy scrollbars for product lists */
 * {
   scrollbar-width: thin;
+}
+
+/* Receipts always print on white paper regardless of theme */
+@media print {
+  #receipt,
+  #receipt * {
+    color: #000 !important;
+    background: #fff !important;
+  }
 }

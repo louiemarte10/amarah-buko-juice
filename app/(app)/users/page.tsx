@@ -84,7 +84,7 @@ export default function UsersPage() {
       </div>
 
       {showForm && (
-        <div className="mb-5 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+        <div className="mb-5 rounded-xl border border-stone-200 bg-surface p-4 shadow-sm">
           {error && (
             <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
               {error}
@@ -132,7 +132,7 @@ export default function UsersPage() {
         </div>
       )}
 
-      <div className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
+      <div className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-surface shadow-sm">
         {loading ? (
           <p className="p-6 text-center text-stone-400">Loading…</p>
         ) : (

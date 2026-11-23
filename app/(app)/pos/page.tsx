@@ -140,7 +140,7 @@ export default function PosPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search products or SKU…"
-          className="mb-3 w-full rounded-xl border border-stone-300 bg-white px-4 py-2.5 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+          className="mb-3 w-full rounded-xl border border-stone-300 bg-surface px-4 py-2.5 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
         />
 
         <div className="mb-4 flex flex-wrap gap-2">
@@ -172,7 +172,7 @@ export default function PosPage() {
                   key={p.id}
                   disabled={out}
                   onClick={() => addToCart(p)}
-                  className="group flex flex-col rounded-xl border border-stone-200 bg-white p-3 text-left shadow-sm transition hover:border-brand hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                  className="group flex flex-col rounded-xl border border-stone-200 bg-surface p-3 text-left shadow-sm transition hover:border-brand hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <span className="mb-1 line-clamp-2 min-h-[2.5rem] text-sm font-semibold text-stone-800">
                     {p.name}
@@ -198,7 +198,7 @@ export default function PosPage() {
 
       {/* Cart */}
       <section className="lg:sticky lg:top-6 lg:h-fit">
-        <div className="rounded-2xl border border-stone-200 bg-white shadow-sm">
+        <div className="rounded-2xl border border-stone-200 bg-surface shadow-sm">
           <div className="flex items-center justify-between border-b border-stone-100 px-4 py-3">
             <h2 className="font-bold text-stone-800">Current Order</h2>
             {cart.length > 0 && (
@@ -357,7 +357,7 @@ function CatChip({
       className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
         active
           ? "bg-brand text-white"
-          : "bg-white text-stone-600 ring-1 ring-stone-200 hover:ring-brand"
+          : "bg-surface text-stone-600 ring-1 ring-stone-200 hover:ring-brand"
       }`}
     >
       {label}
