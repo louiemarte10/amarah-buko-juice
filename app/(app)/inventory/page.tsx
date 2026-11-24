@@ -8,7 +8,7 @@ import {
   type RawMaterial,
   type Supplier,
 } from "@/lib/client";
-import { formatPeso } from "@/lib/money";
+import { centsToPesos, formatPeso } from "@/lib/money";
 import ConfirmModal, { type ConfirmState } from "@/components/ConfirmModal";
 import { SkeletonRows } from "@/components/Skeleton";
 
@@ -86,6 +86,25 @@ export default function InventoryPage() {
     setForm({ ...EMPTY });
   }
 
+  function openEdit(p: Product) {
+    setError("");
+    setForm({
+      id: p.id,
+      name: p.name,
+      sku: p.sku ?? "",
+      price: String(centsToPesos(p.priceCents)),
+      cost: String(centsToPesos(p.costCents)),
+      stock: String(p.stock),
+      lowStockThreshold: String(p.lowStockThreshold),
+      unit: p.unit,
+      categoryId: p.categoryId ?? "",
+      supplierId: p.supplierId ?? "",
+      active: p.active,
+      rawMaterialId: p.rawMaterialId ?? "",
+      rawUsage: String(p.rawUsage ?? 1),
+    });
+  }
+
   async function doSave() {
     if (!form) return;
     setSaving(true);
@@ -125,13 +144,23 @@ export default function InventoryPage() {
     }
   }
 
+  // Updating an existing product asks for confirmation; new products save directly.
   function requestSave() {
     if (!form) return;
     if (!form.name.trim()) {
       setError("Product name is required");
       return;
     }
-    doSave();
+    if (form.id) {
+      setConfirm({
+        title: "Save changes",
+        message: `Apply your changes to "${form.name}"?`,
+        confirmLabel: "Save changes",
+        onConfirm: doSave,
+      });
+    } else {
+      doSave();
+    }
   }
 
   async function bulkAction(action: "archive", ids: string[]) {
@@ -312,6 +341,12 @@ export default function InventoryPage() {
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <button
+                      onClick={() => openEdit(p)}
+                      className="mr-3 text-sm font-medium text-brand hover:underline"
+                    >
+                      Edit
+                    </button>
+                    <button
                       onClick={() => requestArchive(p)}
                       className="text-sm font-medium text-red-500 hover:underline"
                     >
@@ -328,7 +363,9 @@ export default function InventoryPage() {
       {form && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-surface p-6 shadow-2xl">
-            <h2 className="mb-4 text-lg font-bold text-stone-800">New Product</h2>
+            <h2 className="mb-4 text-lg font-bold text-stone-800">
+              {form.id ? "Edit Product" : "New Product"}
+            </h2>
             {error && (
               <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
                 {error}

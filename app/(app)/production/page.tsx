@@ -21,6 +21,11 @@ function addDays(ymd: string, n: number): string {
   const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 10);
 }
+function toYmd(iso: string): string {
+  const d = new Date(iso);
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
 
 type FormState = {
   date: string;
@@ -40,6 +45,7 @@ export default function ProductionPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
@@ -126,29 +132,57 @@ export default function ProductionPage() {
       return;
     }
     setSaving(true);
+    const payload = {
+      date: form.date,
+      rawMaterialId: form.rawMaterialId || null,
+      bukosBroken: broken,
+      damaged: parseInt(form.damaged) || 0,
+      productId: form.productId || null,
+      packsProduced: packs,
+      note: form.note || null,
+    };
     try {
-      await api.post("/api/production", {
-        date: form.date,
-        rawMaterialId: form.rawMaterialId || null,
-        bukosBroken: broken,
-        damaged: parseInt(form.damaged) || 0,
-        productId: form.productId || null,
-        packsProduced: packs,
-        note: form.note || null,
-      });
-      setForm((f) => ({
-        ...f,
-        bukosBroken: "",
-        damaged: "0",
-        packsProduced: "",
-        note: "",
-      }));
+      if (editingId) {
+        await api.patch(`/api/production/${editingId}`, payload);
+      } else {
+        await api.post("/api/production", payload);
+      }
+      cancelEdit();
       await Promise.all([loadRefs(), loadLogs()]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save");
     } finally {
       setSaving(false);
     }
+  }
+
+  function openEdit(l: ProductionLog) {
+    setError("");
+    setEditingId(l.id);
+    setForm({
+      date: toYmd(l.date),
+      rawMaterialId: l.rawMaterialId ?? "",
+      bukosBroken: String(l.bukosBroken),
+      damaged: String(l.damaged),
+      productId: l.productId ?? "",
+      packsProduced: String(l.packsProduced),
+      note: l.note ?? "",
+    });
+    if (typeof window !== "undefined")
+      window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setError("");
+    setForm((f) => ({
+      ...f,
+      date: today,
+      bukosBroken: "",
+      damaged: "0",
+      packsProduced: "",
+      note: "",
+    }));
   }
 
   function requestDelete(l: ProductionLog) {
@@ -219,8 +253,24 @@ export default function ProductionPage() {
       </div>
 
       {/* Encode form */}
-      <div className="rounded-2xl border border-stone-200 bg-surface p-5 shadow-sm">
-        <h2 className="mb-3 font-bold text-stone-800">Encode a day</h2>
+      <div
+        className={`rounded-2xl border bg-surface p-5 shadow-sm ${
+          editingId ? "border-brand" : "border-stone-200"
+        }`}
+      >
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="font-bold text-stone-800">
+            {editingId ? "Edit entry" : "Encode a day"}
+          </h2>
+          {editingId && (
+            <button
+              onClick={cancelEdit}
+              className="rounded-lg border border-stone-300 px-3 py-1 text-xs font-semibold text-stone-600 transition hover:border-brand hover:text-brand-dark"
+            >
+              Cancel edit
+            </button>
+          )}
+        </div>
         {error && (
           <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
             {error}
@@ -313,7 +363,7 @@ export default function ProductionPage() {
               disabled={saving}
               className="w-full rounded-lg bg-brand py-2 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-50"
             >
-              {saving ? "Saving…" : "Save entry"}
+              {saving ? "Saving…" : editingId ? "Update entry" : "Save entry"}
             </button>
           </div>
         </div>
@@ -424,7 +474,13 @@ export default function ProductionPage() {
                       <td className="px-3 py-2.5 text-stone-500">
                         {l.createdBy?.name ?? "—"}
                       </td>
-                      <td className="px-3 py-2.5 text-right">
+                      <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => openEdit(l)}
+                          className="mr-3 text-xs font-semibold text-brand transition hover:underline"
+                        >
+                          Edit
+                        </button>
                         <button
                           onClick={() => requestDelete(l)}
                           className="text-xs font-semibold text-red-500 transition hover:underline"
