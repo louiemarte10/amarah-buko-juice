@@ -125,23 +125,13 @@ export default function InventoryPage() {
     }
   }
 
-  // Updating an existing product asks for confirmation; new products save directly.
   function requestSave() {
     if (!form) return;
     if (!form.name.trim()) {
       setError("Product name is required");
       return;
     }
-    if (form.id) {
-      setConfirm({
-        title: "Save changes",
-        message: `Apply your changes to "${form.name}"?`,
-        confirmLabel: "Save changes",
-        onConfirm: doSave,
-      });
-    } else {
-      doSave();
-    }
+    doSave();
   }
 
   async function bulkAction(action: "archive", ids: string[]) {
@@ -213,7 +203,7 @@ export default function InventoryPage() {
         <h1 className="text-xl font-bold text-stone-800">Inventory</h1>
         <button
           onClick={openNew}
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
         >
           + Add Product
         </button>
@@ -338,9 +328,7 @@ export default function InventoryPage() {
       {form && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-surface p-6 shadow-2xl">
-            <h2 className="mb-4 text-lg font-bold text-stone-800">
-              {form.id ? "Edit Product" : "New Product"}
-            </h2>
+            <h2 className="mb-4 text-lg font-bold text-stone-800">New Product</h2>
             {error && (
               <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
                 {error}
