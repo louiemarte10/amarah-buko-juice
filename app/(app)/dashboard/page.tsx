@@ -245,6 +245,50 @@ export default function DashboardPage() {
         </p>
       </div>
 
+      {/* Summary / formula */}
+      {(() => {
+        const rev = data.range.revenueCents;
+        const exp = data.range.expenseCents;
+        const net = data.range.netCents;
+        const cap = data.inventory.capitalCents;
+        const afterCap = net - cap;
+        return (
+          <div className="rounded-2xl border border-stone-200 bg-surface p-5 shadow-sm">
+            <h2 className="mb-3 font-bold text-stone-800">
+              Summary &amp; formula (selected range)
+            </h2>
+            <div className="mx-auto max-w-md space-y-1.5">
+              <FRow label="Revenue (sales)" value={formatPeso(rev)} />
+              <FRow label="Expenses" value={`− ${formatPeso(exp)}`} />
+              <div className="my-1 border-t border-dashed border-stone-300" />
+              <FRow
+                label="Net  =  Revenue − Expenses"
+                value={formatPeso(net)}
+                strong
+                tone={net < 0 ? "bad" : "good"}
+              />
+              <FRow label="Capital (puhunan)" value={`− ${formatPeso(cap)}`} />
+              <div className="my-1 border-t border-dashed border-stone-300" />
+              <FRow
+                label="After capital  =  Net − Capital"
+                value={formatPeso(afterCap)}
+                strong
+                tone={afterCap < 0 ? "bad" : "good"}
+              />
+              <p
+                className={`pt-1 text-center text-xs font-medium ${
+                  afterCap >= 0 ? "text-emerald-600" : "text-amber-600"
+                }`}
+              >
+                {afterCap >= 0
+                  ? "🎉 Sales have covered your capital and expenses."
+                  : `Still recovering puhunan — ${formatPeso(-afterCap)} to go.`}
+              </p>
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Best sellers */}
         <div className="rounded-2xl border border-stone-200 bg-surface p-5 shadow-sm">
@@ -306,6 +350,41 @@ export default function DashboardPage() {
   );
 }
 
+function FRow({
+  label,
+  value,
+  strong,
+  tone,
+}: {
+  label: string;
+  value: string;
+  strong?: boolean;
+  tone?: "good" | "bad";
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span
+        className={`text-sm ${strong ? "font-semibold text-stone-700" : "text-stone-500"}`}
+      >
+        {label}
+      </span>
+      <span
+        className={`font-mono text-sm tabular-nums ${
+          strong
+            ? tone === "bad"
+              ? "font-extrabold text-red-600"
+              : tone === "good"
+                ? "font-extrabold text-emerald-600"
+                : "font-extrabold text-stone-800"
+            : "text-stone-700"
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
 function LegendDot({
   color,
   label,
@@ -358,30 +437,42 @@ function TrendChart({
       series.map((s, i) => `${x(i).toFixed(2)},${y(s[key]).toFixed(2)}`).join(" ");
     return (
       <div style={{ height: 180 }} className="flex flex-col">
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio="none"
-          className="w-full flex-1"
-        >
-          <polyline
-            points={line("revenueCents")}
-            fill="none"
-            stroke="var(--color-brand)"
-            strokeWidth="0.9"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-          />
-          <polyline
-            points={line("expenseCents")}
-            fill="none"
-            stroke="#f59e0b"
-            strokeWidth="0.9"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
+        <div className="relative flex-1">
+          <svg
+            viewBox={`0 0 ${W} ${H}`}
+            preserveAspectRatio="none"
+            className="absolute inset-0 h-full w-full"
+          >
+            <polyline
+              points={line("revenueCents")}
+              fill="none"
+              stroke="var(--color-brand)"
+              strokeWidth="0.9"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+            <polyline
+              points={line("expenseCents")}
+              fill="none"
+              stroke="#f59e0b"
+              strokeWidth="0.9"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          {/* Invisible hover columns — native tooltip shows the date + values */}
+          <div className="absolute inset-0 flex">
+            {series.map((s) => (
+              <div
+                key={s.date}
+                className="flex-1 cursor-help border-l border-transparent hover:border-stone-300 hover:bg-stone-400/10"
+                title={`${new Date(s.date + "T00:00:00").toLocaleDateString("en-PH", { dateStyle: "medium" })}\nRevenue: ${formatPeso(s.revenueCents)}\nExpenses: ${formatPeso(s.expenseCents)}`}
+              />
+            ))}
+          </div>
+        </div>
         <div className="mt-1 flex justify-between text-[10px] text-stone-400">
           <span>{series[0] ? dayLabel(series[0].date) : ""}</span>
           <span>{series[n - 1] ? dayLabel(series[n - 1].date) : ""}</span>

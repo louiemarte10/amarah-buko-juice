@@ -401,7 +401,7 @@ function LineChart({
   series,
   maxCum,
 }: {
-  series: { date: string; cum: number }[];
+  series: { date: string; cents: number; cum: number }[];
   maxCum: number;
 }) {
   const W = 100;
@@ -415,22 +415,34 @@ function LineChart({
 
   return (
     <div style={{ height: 180 }} className="flex flex-col">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        preserveAspectRatio="none"
-        className="w-full flex-1"
-      >
-        <polygon points={area} fill="var(--color-brand)" opacity="0.12" />
-        <polyline
-          points={pts.join(" ")}
-          fill="none"
-          stroke="var(--color-brand)"
-          strokeWidth="0.8"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
+      <div className="relative flex-1">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="none"
+          className="absolute inset-0 h-full w-full"
+        >
+          <polygon points={area} fill="var(--color-brand)" opacity="0.12" />
+          <polyline
+            points={pts.join(" ")}
+            fill="none"
+            stroke="var(--color-brand)"
+            strokeWidth="0.8"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+        {/* Invisible hover columns — native tooltip shows the date + amounts */}
+        <div className="absolute inset-0 flex">
+          {series.map((s) => (
+            <div
+              key={s.date}
+              className="flex-1 cursor-help border-l border-transparent hover:border-stone-300 hover:bg-stone-400/10"
+              title={`${new Date(s.date + "T00:00:00").toLocaleDateString("en-PH", { dateStyle: "medium" })}\nThat day: ${formatPeso(s.cents)}\nCumulative: ${formatPeso(s.cum)}`}
+            />
+          ))}
+        </div>
+      </div>
       <div className="mt-1 flex justify-between text-[10px] text-stone-400">
         <span>
           {new Date(series[0].date + "T00:00:00").toLocaleDateString("en-PH", {
