@@ -20,36 +20,52 @@
   color-scheme: light;
 }
 
-/* ── Dark theme: override the neutral + accent tokens the whole app uses ── */
+/* ── Dark theme: sleek near-black surfaces with a gold accent (inspired by the
+   CallboxOne apps portal). We override the neutral + accent tokens the whole app
+   uses, so every utility re-themes automatically. In dark mode the brand accent
+   becomes gold; a couple of rules below force readable near-black text on any
+   gold (bg-brand) fill. ── */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --background: #0f172a;
-  --foreground: #e2e8f0;
+  --background: #0a0a0b;
+  --foreground: #ededf0;
 
-  --color-surface: #1e293b;
-  --color-cream: #0f172a;
+  --color-surface: #161618; /* panels / cards */
+  --color-cream: #0d0d0f; /* app background + row hover base */
 
-  --color-stone-50: #22304a;
-  --color-stone-100: #2a3a56;
-  --color-stone-200: #384a68;
-  --color-stone-300: #4a5c7e;
-  --color-stone-400: #8da2c0;
-  --color-stone-500: #a7b6cf;
-  --color-stone-600: #c3cfe3;
-  --color-stone-700: #dde5f2;
-  --color-stone-800: #eef2f9;
+  --color-stone-50: #1b1b1f;
+  --color-stone-100: #232327; /* dividers, subtle fills, hover */
+  --color-stone-200: #2d2d33; /* borders */
+  --color-stone-300: #3a3a42; /* input borders */
+  --color-stone-400: #8e8e98; /* muted text */
+  --color-stone-500: #a9a9b3; /* secondary text */
+  --color-stone-600: #c6c6cd;
+  --color-stone-700: #dedee3;
+  --color-stone-800: #f3f3f6; /* headings */
 
-  --color-brand-dark: #4ade80;
-  --color-brand-light: #14532d;
+  /* Gold accent */
+  --color-brand: #f2b705;
+  --color-brand-dark: #ffcb2e; /* brighter gold for hover */
+  --color-brand-light: #2a2410; /* dark gold-tinted panel */
 
-  --color-amber-50: #3a2e12;
-  --color-amber-200: #5a4a1e;
+  --color-amber-50: #2a2410;
+  --color-amber-200: #4a3d15;
   --color-amber-600: #fbbf24;
   --color-amber-700: #fcd34d;
 
   /* only dark-tint the light red surfaces; keep red-500/600/700 for buttons/links */
-  --color-red-50: #3a1d22;
-  --color-red-100: #4a2228;
+  --color-red-50: #2a1518;
+  --color-red-100: #3a1d22;
+  --color-red-200: #4a2228;
+}
+
+/* Gold fills (bg-brand) carry near-black text in dark mode — including children
+   that used text-white/80 etc. on the same fill (e.g. the accent stat card). */
+:root[data-theme="dark"] .bg-brand {
+  color: #17130a;
+}
+:root[data-theme="dark"] .bg-brand [class*="text-white"] {
+  color: #17130a;
 }
 
 html,

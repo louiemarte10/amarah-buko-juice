@@ -109,26 +109,43 @@ async function main() {
     await prisma.product.create({ data: { ...p, lowStockThreshold: 10 } });
   }
 
-  // A sellable product made from the Whole Buko raw material: one buko yields
-  // 4 water packs (0.25 buko each), each sold at ₱25.
-  await prisma.product.create({
-    data: {
-      name: "Buko Water (Pack)",
-      sku: "BUKO-PACK",
-      priceCents: 2500,
-      costCents: 300,
-      stock: 0, // derived from the raw material
-      lowStockThreshold: 10,
-      unit: "pack",
-      categoryId: bukoDrinks.id,
-      supplierId: farm.id,
-      rawMaterialId: wholeBuko.id,
-      rawUsage: 0.25,
-    },
+  // Two sellable products from the Whole Buko raw material, both drawing from
+  // the same buko stock:
+  //   • Buko Water (Pack) — 0.25 buko each (1 buko = 4 packs), ₱25
+  //   • Whole Buko — 1 buko each (sell the whole coconut), ₱50
+  await prisma.product.createMany({
+    data: [
+      {
+        name: "Buko Water (Pack)",
+        sku: "BUKO-PACK",
+        priceCents: 2500,
+        costCents: 300,
+        stock: 0, // derived from the raw material
+        lowStockThreshold: 10,
+        unit: "pack",
+        categoryId: bukoDrinks.id,
+        supplierId: farm.id,
+        rawMaterialId: wholeBuko.id,
+        rawUsage: 0.25,
+      },
+      {
+        name: "Whole Buko",
+        sku: "BUKO-WHOLE",
+        priceCents: 5000,
+        costCents: 1200,
+        stock: 0, // derived from the raw material
+        lowStockThreshold: 10,
+        unit: "buko",
+        categoryId: bukoDrinks.id,
+        supplierId: farm.id,
+        rawMaterialId: wholeBuko.id,
+        rawUsage: 1,
+      },
+    ],
   });
 
   console.log(
-    `Seeded ${products.length + 1} products, 1 raw material, 4 categories, 2 suppliers, 2 users.`,
+    `Seeded ${products.length + 2} products, 1 raw material, 4 categories, 2 suppliers, 2 users.`,
   );
 }
 
