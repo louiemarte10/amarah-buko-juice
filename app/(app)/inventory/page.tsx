@@ -18,6 +18,7 @@ type FormState = {
   sku: string;
   price: string;
   cost: string;
+  capital: string;
   stock: string;
   lowStockThreshold: string;
   unit: string;
@@ -34,6 +35,7 @@ const EMPTY: FormState = {
   sku: "",
   price: "",
   cost: "",
+  capital: "",
   stock: "0",
   lowStockThreshold: "10",
   unit: "pc",
@@ -94,6 +96,7 @@ export default function InventoryPage() {
       sku: p.sku ?? "",
       price: String(centsToPesos(p.priceCents)),
       cost: String(centsToPesos(p.costCents)),
+      capital: p.capitalCents ? String(centsToPesos(p.capitalCents)) : "",
       stock: String(p.stock),
       lowStockThreshold: String(p.lowStockThreshold),
       unit: p.unit,
@@ -116,6 +119,7 @@ export default function InventoryPage() {
       sku: form.sku || null,
       price: parseFloat(form.price) || 0,
       cost: parseFloat(form.cost) || 0,
+      capital: parseFloat(form.capital) || 0,
       // Own-stock products send their stock; raw-linked ones derive it.
       stock: fromRaw ? 0 : parseInt(form.stock) || 0,
       lowStockThreshold: parseInt(form.lowStockThreshold) || 0,
@@ -408,6 +412,16 @@ export default function InventoryPage() {
                   step="0.01"
                   value={form.cost}
                   onChange={(e) => setForm({ ...form, cost: e.target.value })}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Capital / puhunan (₱) — optional" className="col-span-2">
+                <input
+                  type="number"
+                  step="0.01"
+                  value={form.capital}
+                  onChange={(e) => setForm({ ...form, capital: e.target.value })}
+                  placeholder="leave blank if not tracking"
                   className={inputCls}
                 />
               </Field>

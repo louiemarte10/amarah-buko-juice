@@ -47,6 +47,7 @@ type Dashboard = {
     activeProducts: number;
     retailValueCents: number;
     costValueCents: number;
+    capitalCents: number;
     lowStockCount: number;
   };
 };
@@ -176,9 +177,9 @@ export default function DashboardPage() {
           danger={data.range.netCents < 0}
         />
         <Stat
-          label="Capital on hand"
-          value={formatPeso(data.inventory.costValueCents)}
-          sub="cost of stock (puhunan)"
+          label="Capital (puhunan)"
+          value={formatPeso(data.inventory.capitalCents)}
+          sub="what you encoded"
         />
         <Stat
           label="Transactions"

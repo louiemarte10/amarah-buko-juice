@@ -99,6 +99,7 @@ model RawMaterial {
   stock             Float    @default(0) // whole units on hand
   lowStockThreshold Float    @default(0)
   costCents         Int      @default(0) // cost per whole unit, in centavos
+  capitalCents      Int      @default(0) // manually-encoded capital (puhunan)
   active            Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -145,6 +146,7 @@ model Product {
   sku               String?  @unique
   priceCents        Int // selling price in centavos
   costCents         Int      @default(0) // cost in centavos
+  capitalCents      Int      @default(0) // manually-encoded capital (puhunan)
   stock             Int      @default(0)
   lowStockThreshold Int      @default(10)
   unit              String   @default("pc") // pc, cup, bottle, etc.

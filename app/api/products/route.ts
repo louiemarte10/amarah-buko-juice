@@ -148,6 +148,7 @@ export async function POST(req: NextRequest) {
         sku,
         priceCents: pesosToCents(price),
         costCents: pesosToCents(Number(body.cost ?? 0)),
+        capitalCents: pesosToCents(Math.max(0, Number(body.capital ?? 0))),
         // Raw-linked products don't track their own stock.
         stock: rawMaterialId
           ? 0

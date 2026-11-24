@@ -43,6 +43,8 @@ export async function PATCH(
   if (body.lowStockThreshold !== undefined)
     data.lowStockThreshold = Math.max(0, Number(body.lowStockThreshold));
   if (body.cost !== undefined) data.costCents = pesosToCents(Number(body.cost));
+  if (body.capital !== undefined)
+    data.capitalCents = pesosToCents(Math.max(0, Number(body.capital)));
   if (body.active !== undefined) data.active = Boolean(body.active);
   if (body.supplierId !== undefined)
     data.supplierId = body.supplierId ? String(body.supplierId) : null;

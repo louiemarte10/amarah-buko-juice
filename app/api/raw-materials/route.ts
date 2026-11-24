@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
         stock: Math.max(0, Number(body.stock ?? 0)),
         lowStockThreshold: Math.max(0, Number(body.lowStockThreshold ?? 0)),
         costCents: pesosToCents(Number(body.cost ?? 0)),
+        capitalCents: pesosToCents(Math.max(0, Number(body.capital ?? 0))),
         active: body.active === undefined ? true : Boolean(body.active),
         supplierId: body.supplierId ? String(body.supplierId) : null,
       },

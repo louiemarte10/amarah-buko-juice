@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
           lowStockThreshold: true,
           priceCents: true,
           costCents: true,
+          capitalCents: true,
           unit: true,
           rawMaterialId: true,
         },
@@ -77,6 +78,7 @@ export async function GET(req: NextRequest) {
           stock: true,
           lowStockThreshold: true,
           costCents: true,
+          capitalCents: true,
           unit: true,
         },
       }),
@@ -140,6 +142,11 @@ export async function GET(req: NextRequest) {
     products.reduce((sum, p) => sum + p.costCents * p.stock, 0) +
     rawMaterials.reduce((sum, r) => sum + Math.round(r.costCents * r.stock), 0);
 
+  // Capital = the amount manually encoded on products + raw materials (puhunan).
+  const capitalCents =
+    products.reduce((sum, p) => sum + (p.capitalCents ?? 0), 0) +
+    rawMaterials.reduce((sum, r) => sum + (r.capitalCents ?? 0), 0);
+
   const expenseCents = expenseAgg._sum.amountCents ?? 0;
 
   return NextResponse.json({
@@ -165,6 +172,7 @@ export async function GET(req: NextRequest) {
       activeProducts: products.length,
       retailValueCents: inventoryRetailCents,
       costValueCents: inventoryCostCents,
+      capitalCents,
       lowStockCount: lowStock.length,
     },
   });

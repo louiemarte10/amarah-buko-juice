@@ -13,6 +13,7 @@ type FormState = {
   stock: string;
   lowStockThreshold: string;
   cost: string;
+  capital: string;
   supplierId: string;
   active: boolean;
 };
@@ -23,6 +24,7 @@ const EMPTY: FormState = {
   stock: "0",
   lowStockThreshold: "0",
   cost: "",
+  capital: "",
   supplierId: "",
   active: true,
 };
@@ -72,6 +74,7 @@ export default function RawMaterialsPage() {
       stock: String(r.stock),
       lowStockThreshold: String(r.lowStockThreshold),
       cost: String(centsToPesos(r.costCents)),
+      capital: r.capitalCents ? String(centsToPesos(r.capitalCents)) : "",
       supplierId: r.supplierId ?? "",
       active: r.active,
     });
@@ -88,6 +91,7 @@ export default function RawMaterialsPage() {
       stock: parseFloat(form.stock) || 0,
       lowStockThreshold: parseFloat(form.lowStockThreshold) || 0,
       cost: parseFloat(form.cost) || 0,
+      capital: parseFloat(form.capital) || 0,
       supplierId: form.supplierId || null,
       active: form.active,
     };
@@ -195,11 +199,11 @@ export default function RawMaterialsPage() {
           Total capital on hand (puhunan)
         </span>
         <span className="text-xl font-extrabold text-brand-dark">
-          {formatPeso(
-            items.reduce((s, r) => s + Math.round(r.costCents * r.stock), 0),
-          )}
+          {formatPeso(items.reduce((s, r) => s + (r.capitalCents ?? 0), 0))}
         </span>
-        <span className="text-xs text-stone-500">= cost/unit × on hand</span>
+        <span className="text-xs text-stone-500">
+          = sum of capital you encoded
+        </span>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-stone-200 bg-surface shadow-sm">
@@ -262,9 +266,7 @@ export default function RawMaterialsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-stone-700">
-                      {r.costCents > 0
-                        ? formatPeso(Math.round(r.costCents * r.stock))
-                        : "—"}
+                      {r.capitalCents > 0 ? formatPeso(r.capitalCents) : "—"}
                     </td>
                     <td className="px-4 py-3 text-center text-stone-500">
                       {r._count?.products ?? 0}
@@ -352,6 +354,16 @@ export default function RawMaterialsPage() {
                   onChange={(e) =>
                     setForm({ ...form, lowStockThreshold: e.target.value })
                   }
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Capital / puhunan (₱) — optional" className="col-span-2">
+                <input
+                  type="number"
+                  step="0.01"
+                  value={form.capital}
+                  onChange={(e) => setForm({ ...form, capital: e.target.value })}
+                  placeholder="leave blank if not tracking"
                   className={inputCls}
                 />
               </Field>

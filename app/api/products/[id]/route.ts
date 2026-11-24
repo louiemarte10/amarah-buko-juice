@@ -44,6 +44,8 @@ export async function PATCH(
     data.priceCents = pesosToCents(price);
   }
   if (body.cost !== undefined) data.costCents = pesosToCents(Number(body.cost));
+  if (body.capital !== undefined)
+    data.capitalCents = pesosToCents(Math.max(0, Number(body.capital)));
   if (body.lowStockThreshold !== undefined)
     data.lowStockThreshold = Math.max(0, Math.trunc(Number(body.lowStockThreshold)));
   if (body.unit !== undefined) data.unit = String(body.unit).trim() || "pc";
