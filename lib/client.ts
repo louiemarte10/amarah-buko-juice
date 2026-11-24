@@ -53,6 +53,9 @@ export type Product = {
     stock: number;
     lowStockThreshold: number;
   } | null;
+  // Set by the POS date view: this product's stock reflects the selected day's
+  // production (packs produced that day − sold that day).
+  productionFed?: boolean;
 };
 
 export type ProductionLog = {

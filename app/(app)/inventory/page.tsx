@@ -158,6 +158,16 @@ export default function InventoryPage() {
     }
   }
 
+  function requestArchive(p: Product) {
+    setConfirm({
+      title: "Archive product",
+      message: `Archive "${p.name}"? It will move to the Archived page and stop appearing in the POS. You can restore it anytime.`,
+      confirmLabel: "Archive",
+      danger: true,
+      onConfirm: () => bulkAction("archive", [p.id]),
+    });
+  }
+
   function requestArchiveSelected() {
     const ids = [...selected];
     setConfirm({
@@ -254,14 +264,15 @@ export default function InventoryPage() {
               <th className="px-4 py-3">Category</th>
               <th className="px-4 py-3 text-right">Price</th>
               <th className="px-4 py-3 text-right">Stock</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <SkeletonRows rows={6} cols={5} />
+              <SkeletonRows rows={6} cols={6} />
             ) : visible.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-stone-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-stone-400">
                   No products yet.
                 </td>
               </tr>
@@ -308,6 +319,14 @@ export default function InventoryPage() {
                     >
                       {p.stock} {p.unit}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <button
+                      onClick={() => requestArchive(p)}
+                      className="text-sm font-medium text-red-500 hover:underline"
+                    >
+                      Archive
+                    </button>
                   </td>
                 </tr>
               ))

@@ -6,14 +6,22 @@ import { formatPeso } from "@/lib/money";
 import Receipt from "@/components/Receipt";
 import { SkeletonCards } from "@/components/Skeleton";
 
+function todayStr(): string {
+  const d = new Date();
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
 type Line = { product: Product; quantity: number };
 
 export default function PosPage() {
+  const today = todayStr();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState<string>("all");
+  const [saleDate, setSaleDate] = useState(today);
 
   const [cart, setCart] = useState<Line[]>([]);
   const [discount, setDiscount] = useState("");
@@ -23,11 +31,13 @@ export default function PosPage() {
   const [error, setError] = useState("");
   const [lastSale, setLastSale] = useState<Sale | null>(null);
 
-  async function loadProducts() {
+  async function loadProducts(date = saleDate) {
     setLoading(true);
     try {
       const [p, c] = await Promise.all([
-        api.get<{ products: Product[] }>("/api/products?active=true"),
+        api.get<{ products: Product[] }>(
+          `/api/products?active=true&date=${date}`,
+        ),
         api.get<{ categories: Category[] }>("/api/categories"),
       ]);
       setProducts(p.products);
@@ -37,9 +47,18 @@ export default function PosPage() {
     }
   }
 
+  // Load on mount and whenever the sale date changes (availability is per-day
+  // for production-fed products).
   useEffect(() => {
-    loadProducts();
-  }, []);
+    loadProducts(saleDate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saleDate]);
+
+  function changeDate(d: string) {
+    setCart([]); // clear the order — availability differs per day
+    setError("");
+    setSaleDate(d);
+  }
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -120,10 +139,11 @@ export default function PosPage() {
         paymentMethod: payment,
         cash: payment === "CASH" ? parseFloat(cash) || 0 : 0,
         discount: parseFloat(discount) || 0,
+        date: saleDate,
       });
       setLastSale(sale);
       clearCart();
-      loadProducts();
+      loadProducts(saleDate);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sale failed");
     } finally {
@@ -135,7 +155,36 @@ export default function PosPage() {
     <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
       {/* Product catalog */}
       <section className="min-w-0">
-        <h1 className="mb-3 text-xl font-bold text-stone-800">Point of Sale</h1>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-xl font-bold text-stone-800">Point of Sale</h1>
+          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-surface px-3 py-1.5">
+            <span className="text-xs font-medium text-stone-500">Sale date</span>
+            <input
+              type="date"
+              value={saleDate}
+              max={today}
+              onChange={(e) => changeDate(e.target.value)}
+              className="rounded-lg border border-stone-300 bg-surface px-2 py-1 text-sm outline-none focus:border-brand"
+            />
+            {saleDate !== today && (
+              <button
+                onClick={() => changeDate(today)}
+                className="rounded-lg bg-brand px-2.5 py-1 text-xs font-semibold text-white hover:bg-brand-dark"
+              >
+                Today
+              </button>
+            )}
+          </div>
+        </div>
+        {saleDate !== today && (
+          <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+            Backdating this sale to{" "}
+            {new Date(saleDate + "T00:00:00").toLocaleDateString("en-PH", {
+              dateStyle: "full",
+            })}
+            . Pack stock shown is what was produced that day.
+          </p>
+        )}
 
         <input
           value={search}
@@ -190,7 +239,11 @@ export default function PosPage() {
                         : "text-stone-400"
                     }`}
                   >
-                    {out ? "Out of stock" : `${p.stock} ${p.unit} left`}
+                    {out
+                      ? p.productionFed
+                        ? "None produced this day"
+                        : "Out of stock"
+                      : `${p.stock} ${p.unit}${p.productionFed ? " this day" : " left"}`}
                   </span>
                 </button>
               );

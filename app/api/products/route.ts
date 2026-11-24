@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { unauthorized, forbidden, badRequest } from "@/lib/api";
 import { pesosToCents } from "@/lib/money";
+import { manilaRangeUTC } from "@/lib/date";
 
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
@@ -51,7 +52,9 @@ export async function GET(req: NextRequest) {
   // For raw-linked products, report the DERIVED number of sellable units
   // available (how many whole raw units will divide into) so the POS and
   // inventory show real availability from the shared raw stock.
-  const shaped = products.map((p) => {
+  const shaped: Array<
+    (typeof products)[number] & { productionFed?: boolean }
+  > = products.map((p) => {
     if (p.rawMaterialId && p.rawMaterial) {
       const usage = p.rawUsage > 0 ? p.rawUsage : 1;
       const available = Math.floor((p.rawMaterial.stock + 1e-9) / usage);
@@ -59,6 +62,50 @@ export async function GET(req: NextRequest) {
     }
     return p;
   });
+
+  // Date mode (POS): for products fed by the daily Production encode, report
+  // availability for THAT day = packs produced that day − packs sold that day.
+  const date = searchParams.get("date");
+  if (date) {
+    const range = manilaRangeUTC(date, date);
+    const [producedRows, soldRows, fedRows] = await Promise.all([
+      prisma.productionLog.groupBy({
+        by: ["productId"],
+        where: { date: range, productId: { not: null } },
+        _sum: { packsProduced: true },
+      }),
+      prisma.saleItem.groupBy({
+        by: ["productId"],
+        where: { sale: { createdAt: range } },
+        _sum: { quantity: true },
+      }),
+      prisma.productionLog.findMany({
+        where: { productId: { not: null } },
+        distinct: ["productId"],
+        select: { productId: true },
+      }),
+    ]);
+    const producedBy = new Map(
+      producedRows.map((r) => [r.productId, r._sum.packsProduced ?? 0]),
+    );
+    const soldBy = new Map(
+      soldRows.map((r) => [r.productId, r._sum.quantity ?? 0]),
+    );
+    const fed = new Set(fedRows.map((r) => r.productId));
+    const dated = shaped.map((p) =>
+      fed.has(p.id)
+        ? {
+            ...p,
+            stock: Math.max(
+              0,
+              (producedBy.get(p.id) ?? 0) - (soldBy.get(p.id) ?? 0),
+            ),
+            productionFed: true,
+          }
+        : p,
+    );
+    return NextResponse.json({ products: dated });
+  }
 
   return NextResponse.json({ products: shaped });
 }

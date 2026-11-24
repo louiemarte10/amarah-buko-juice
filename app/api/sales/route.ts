@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { unauthorized, badRequest } from "@/lib/api";
 import { pesosToCents } from "@/lib/money";
-import { manilaRangeUTC } from "@/lib/date";
+import { manilaDayKey, manilaDayStartUTC, manilaRangeUTC } from "@/lib/date";
 
 type CartItem = { productId: string; quantity: number };
 
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     paymentMethod?: "CASH" | "GCASH" | "CARD";
     cash?: number;
     discount?: number;
+    date?: string; // optional YYYY-MM-DD to backdate the sale
   };
   try {
     body = await req.json();
@@ -74,6 +75,18 @@ export async function POST(req: NextRequest) {
   const paymentMethod = body.paymentMethod ?? "CASH";
   const discountCents = Math.max(0, pesosToCents(Number(body.discount ?? 0)));
 
+  // The sale's date. Defaults to today (Manila); can be backdated from the POS.
+  const now = new Date();
+  const dateStr =
+    body.date && /^\d{4}-\d{2}-\d{2}$/.test(body.date)
+      ? body.date
+      : manilaDayKey(now);
+  // Keep the current time-of-day so sales within a day still order correctly.
+  const todayStart = manilaDayStartUTC(manilaDayKey(now));
+  const createdAt = new Date(
+    manilaDayStartUTC(dateStr).getTime() + (now.getTime() - todayStart.getTime()),
+  );
+
   try {
     const sale = await prisma.$transaction(async (tx) => {
       const ids = [...qtyByProduct.keys()];
@@ -86,6 +99,34 @@ export async function POST(req: NextRequest) {
         },
       });
       const byId = new Map(products.map((p) => [p.id, p]));
+
+      // Products fed by the daily Production encode are limited per DAY:
+      // availability on the sale's date = packs produced that day − sold that day.
+      const dayRange = manilaRangeUTC(dateStr, dateStr);
+      const [producedRows, soldRows, fedRows] = await Promise.all([
+        tx.productionLog.groupBy({
+          by: ["productId"],
+          where: { date: dayRange, productId: { in: ids } },
+          _sum: { packsProduced: true },
+        }),
+        tx.saleItem.groupBy({
+          by: ["productId"],
+          where: { productId: { in: ids }, sale: { createdAt: dayRange } },
+          _sum: { quantity: true },
+        }),
+        tx.productionLog.findMany({
+          where: { productId: { in: ids } },
+          distinct: ["productId"],
+          select: { productId: true },
+        }),
+      ]);
+      const producedBy = new Map(
+        producedRows.map((r) => [r.productId, r._sum.packsProduced ?? 0]),
+      );
+      const soldBy = new Map(
+        soldRows.map((r) => [r.productId, r._sum.quantity ?? 0]),
+      );
+      const fed = new Set(fedRows.map((r) => r.productId));
 
       let subtotalCents = 0;
       const saleItemsData: {
@@ -109,7 +150,18 @@ export async function POST(req: NextRequest) {
           throw new Error(`A product in the cart is no longer available`);
         }
 
-        if (product.rawMaterialId && product.rawMaterial) {
+        if (fed.has(product.id)) {
+          // Production-fed (e.g. the pack): limited by this day's production.
+          const produced = producedBy.get(product.id) ?? 0;
+          const sold = soldBy.get(product.id) ?? 0;
+          const avail = produced - sold;
+          if (avail < quantity) {
+            throw new Error(
+              `Not enough ${product.name} for ${dateStr}: ${produced} produced, ${sold} already sold (you need ${quantity}). Encode this day's production first.`,
+            );
+          }
+          ownStockDec.set(productId, quantity); // keep running stock accurate
+        } else if (product.rawMaterialId && product.rawMaterial) {
           // Made from a raw item: consume quantity × rawUsage from shared stock.
           const usage = product.rawUsage > 0 ? product.rawUsage : 1;
           const entry = rawNeed.get(product.rawMaterialId) ?? {
@@ -178,6 +230,7 @@ export async function POST(req: NextRequest) {
       return tx.sale.create({
         data: {
           reference: makeReference(),
+          createdAt,
           subtotalCents,
           discountCents,
           totalCents,
