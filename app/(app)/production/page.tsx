@@ -121,6 +121,10 @@ export default function ProductionPage() {
       setError("Damaged bukos can't exceed bukos broken.");
       return;
     }
+    if (packs > 0 && !form.productId) {
+      setError("Choose which product the packs go to (Goes to product).");
+      return;
+    }
     setSaving(true);
     try {
       await api.post("/api/production", {

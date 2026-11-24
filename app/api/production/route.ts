@@ -54,6 +54,12 @@ export async function POST(req: NextRequest) {
   const date = dateStr ? manilaDayStartUTC(dateStr) : new Date();
   const rawMaterialId = body.rawMaterialId ? String(body.rawMaterialId) : null;
   const productId = body.productId ? String(body.productId) : null;
+
+  // Guard against packs vanishing: if you produced packs, they must go to a
+  // product's stock.
+  if (packsProduced > 0 && !productId) {
+    return badRequest("Choose which product the packs go to");
+  }
   const note = body.note ? String(body.note).trim() : null;
 
   try {
