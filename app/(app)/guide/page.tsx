@@ -263,18 +263,27 @@ function BlockView({ b }: { b: Block }) {
 
 export default function GuidePage() {
   const [at, setAt] = useState(0);
+  const [showData, setShowData] = useState(false);
   const step = STEPS[at];
 
   return (
     <div className="space-y-4 pb-10">
-      <header>
-        <h1 className="text-2xl font-bold text-stone-800">
-          How to use Amarah Fresh Buko&apos;s
-        </h1>
-        <p className="mt-1 max-w-[75ch] text-sm text-stone-500">
-          A quick, step-by-step walkthrough of the POS &amp; Inventory system —
-          from ringing up a sale to managing stock and staff.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-stone-800">
+            How to use Amarah Fresh Buko&apos;s
+          </h1>
+          <p className="mt-1 max-w-[75ch] text-sm text-stone-500">
+            A quick, step-by-step walkthrough of the POS &amp; Inventory system —
+            from ringing up a sale to managing stock and staff.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowData(true)}
+          className="flex shrink-0 items-center gap-2 rounded-lg border border-brand bg-brand-light px-3 py-2 text-sm font-semibold text-brand-dark transition hover:bg-brand hover:text-white"
+        >
+          🗄️ Where&apos;s my data?
+        </button>
       </header>
 
       {/* Step tabs */}
@@ -335,6 +344,108 @@ export default function GuidePage() {
           </button>
         </div>
       </section>
+
+      {showData && <DataModal onClose={() => setShowData(false)} />}
+    </div>
+  );
+}
+
+function DataModal({ onClose }: { onClose: () => void }) {
+  const rows: [string, string][] = [
+    ["Host", "Neon (neon.tech) — cloud Postgres"],
+    ["Project", "Amarah"],
+    ["Region", "Singapore (ap-southeast-1)"],
+    ["Database", "neondb"],
+    ["Branch", "production"],
+  ];
+  const steps = [
+    "Go to neon.tech and click Sign in (use the account you made the project with).",
+    "Open the Amarah project from your dashboard.",
+    "In the left menu, click Tables to browse your data.",
+    "Click any table — Product, RawMaterial, Sale, User… — to view, search and sort rows.",
+    "Prefer queries? Open the SQL Editor and run the example below.",
+  ];
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-surface p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <h2 className="text-lg font-bold text-stone-800">
+            🗄️ Where your data is stored
+          </h2>
+          <button
+            onClick={onClose}
+            className="rounded-lg px-2 py-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <p className="mb-4 text-sm leading-relaxed text-stone-600">
+          Everything the app saves — products, raw materials (buko), sales and
+          staff — lives in a <strong>cloud Postgres database hosted on Neon</strong>.
+          It&apos;s <strong>not</strong> on your computer or inside the app code, so
+          your data is safe even if your laptop breaks, and the live website and
+          your local app share the <strong>same</strong> database.
+        </p>
+
+        <div className="mb-4 overflow-hidden rounded-xl border border-stone-200">
+          <table className="w-full text-sm">
+            <tbody>
+              {rows.map(([k, v], i) => (
+                <tr
+                  key={k}
+                  className={i % 2 ? "bg-cream" : ""}
+                >
+                  <td className="px-3 py-2 font-medium text-stone-500">{k}</td>
+                  <td className="px-3 py-2 text-stone-800">{v}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <h3 className="mb-2 text-sm font-bold text-stone-800">
+          How to see it on the Neon website
+        </h3>
+        <ol className="mb-4 space-y-2">
+          {steps.map((s, i) => (
+            <li key={i} className="flex gap-2.5 text-sm leading-relaxed text-stone-600">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-white">
+                {i + 1}
+              </span>
+              <span className="flex-1">{s}</span>
+            </li>
+          ))}
+        </ol>
+
+        <pre className="mb-4 overflow-x-auto rounded-lg bg-stone-100 p-3 text-xs text-stone-700">
+          <code>{`select name, "priceCents", stock
+from "Product" order by name;
+
+select * from "RawMaterial";`}</code>
+        </pre>
+
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-700">
+          🔒 <strong>Keep it private.</strong> Your database password and
+          connection strings (in the project&apos;s <code>.env</code> file and in
+          Vercel&apos;s Environment Variables) should never be shared or posted
+          online. On Neon you can find them under <strong>Connect</strong>.
+        </div>
+
+        <button
+          onClick={onClose}
+          className="mt-5 w-full rounded-lg bg-brand py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark"
+        >
+          Got it
+        </button>
+      </div>
     </div>
   );
 }
