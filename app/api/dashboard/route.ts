@@ -36,12 +36,18 @@ export async function GET(req: NextRequest) {
 
   const { gte, lt } = manilaRangeUTC(from, to);
 
-  const [rangeSales, products, topGroups, totalProducts, rawMaterials] =
-    await Promise.all([
-      prisma.sale.findMany({
-        where: { createdAt: { gte, lt } },
-        select: { createdAt: true, totalCents: true },
-      }),
+  const [
+    rangeSales,
+    products,
+    topGroups,
+    totalProducts,
+    rawMaterials,
+    expenseAgg,
+  ] = await Promise.all([
+    prisma.sale.findMany({
+      where: { createdAt: { gte, lt } },
+      select: { createdAt: true, totalCents: true },
+    }),
       prisma.product.findMany({
         where: { active: true },
         select: {
@@ -73,6 +79,10 @@ export async function GET(req: NextRequest) {
           costCents: true,
           unit: true,
         },
+      }),
+      prisma.expense.aggregate({
+        where: { date: { gte, lt } },
+        _sum: { amountCents: true },
       }),
     ]);
 
@@ -130,6 +140,8 @@ export async function GET(req: NextRequest) {
     products.reduce((sum, p) => sum + p.costCents * p.stock, 0) +
     rawMaterials.reduce((sum, r) => sum + Math.round(r.costCents * r.stock), 0);
 
+  const expenseCents = expenseAgg._sum.amountCents ?? 0;
+
   return NextResponse.json({
     range: {
       from,
@@ -137,6 +149,8 @@ export async function GET(req: NextRequest) {
       days: buckets.length,
       revenueCents: rangeRevenueCents,
       count: rangeCount,
+      expenseCents,
+      netCents: rangeRevenueCents - expenseCents,
       series: buckets,
     },
     bestSellers: topGroups.map((g) => ({

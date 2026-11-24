@@ -37,8 +37,25 @@ model User {
 
   sales          Sale[]
   productionLogs ProductionLog[]
+  expenses       Expense[]
 
   @@index([staffRoleId])
+}
+
+// Optional daily operating expenses (transportation, food, water, supplies…).
+// Counted against revenue on the Dashboard (Net = Revenue − Expenses).
+model Expense {
+  id          String   @id @default(cuid())
+  date        DateTime @default(now())
+  category    String   @default("Other")
+  amountCents Int      @default(0)
+  note        String?
+  createdAt   DateTime @default(now())
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([date])
 }
 
 // Custom staff roles (labels). `isAdmin` decides the permission tier:

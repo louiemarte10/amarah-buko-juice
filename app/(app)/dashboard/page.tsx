@@ -24,6 +24,8 @@ type Dashboard = {
     days: number;
     revenueCents: number;
     count: number;
+    expenseCents: number;
+    netCents: number;
     series: { date: string; revenueCents: number; count: number }[];
   };
   bestSellers: {
@@ -124,8 +126,8 @@ export default function DashboardPage() {
           <h1 className="text-xl font-bold text-stone-800">Dashboard</h1>
           {filterBar}
         </div>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
             <Skeleton key={i} className="h-24 rounded-2xl" />
           ))}
         </div>
@@ -155,12 +157,23 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <Stat
           label="Revenue (range)"
           value={formatPeso(data.range.revenueCents)}
           sub={rangeLabel}
           accent
+        />
+        <Stat
+          label="Expenses (range)"
+          value={formatPeso(data.range.expenseCents)}
+          sub="transportation, food, etc."
+        />
+        <Stat
+          label="Net (range)"
+          value={formatPeso(data.range.netCents)}
+          sub="revenue − expenses"
+          danger={data.range.netCents < 0}
         />
         <Stat
           label="Capital on hand"
@@ -304,21 +317,25 @@ function Stat({
   sub,
   accent,
   warn,
+  danger,
 }: {
   label: string;
   value: string;
   sub: string;
   accent?: boolean;
   warn?: boolean;
+  danger?: boolean;
 }) {
   return (
     <div
       className={`rounded-2xl border p-4 shadow-sm ${
         accent
           ? "border-brand bg-brand text-white"
-          : warn
-            ? "border-amber-200 bg-amber-50"
-            : "border-stone-200 bg-surface"
+          : danger
+            ? "border-red-200 bg-red-50"
+            : warn
+              ? "border-amber-200 bg-amber-50"
+              : "border-stone-200 bg-surface"
       }`}
     >
       <p
@@ -330,7 +347,13 @@ function Stat({
       </p>
       <p
         className={`mt-1 text-2xl font-extrabold ${
-          warn ? "text-amber-700" : accent ? "text-white" : "text-stone-800"
+          danger
+            ? "text-red-600"
+            : warn
+              ? "text-amber-700"
+              : accent
+                ? "text-white"
+                : "text-stone-800"
         }`}
       >
         {value}

@@ -73,6 +73,16 @@ export type ProductionLog = {
   createdBy?: { id: string; name: string } | null;
 };
 
+export type Expense = {
+  id: string;
+  date: string;
+  category: string;
+  amountCents: number;
+  note: string | null;
+  createdAt: string;
+  createdBy?: { id: string; name: string } | null;
+};
+
 export type RawMaterial = {
   id: string;
   name: string;

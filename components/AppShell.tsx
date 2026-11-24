@@ -15,6 +15,7 @@ const NAV: NavItem[] = [
   { href: "/inventory", label: "Inventory", icon: "📦", admin: true },
   { href: "/raw-materials", label: "Raw Materials", icon: "🥥", admin: true },
   { href: "/production", label: "Production", icon: "🔨", admin: true },
+  { href: "/expenses", label: "Daily Expenses", icon: "💵", admin: true },
   { href: "/archive", label: "Archived", icon: "🗃️", admin: true },
   { href: "/categories", label: "Categories", icon: "🏷️", admin: true },
   { href: "/suppliers", label: "Suppliers", icon: "🚚", admin: true },
