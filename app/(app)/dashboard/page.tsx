@@ -26,7 +26,12 @@ type Dashboard = {
     count: number;
     expenseCents: number;
     netCents: number;
-    series: { date: string; revenueCents: number; count: number }[];
+    series: {
+      date: string;
+      revenueCents: number;
+      expenseCents: number;
+      count: number;
+    }[];
   };
   bestSellers: {
     productId: string;
@@ -56,6 +61,7 @@ export default function DashboardPage() {
   const today = todayStr();
   const [data, setData] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
+  const [chartType, setChartType] = useState<"bar" | "line">("bar");
 
   // Default range: last 7 days.
   const [from, setFrom] = useState(addDays(today, -6));
@@ -141,8 +147,6 @@ export default function DashboardPage() {
     );
   }
 
-  const maxBar = Math.max(1, ...data.range.series.map((s) => s.revenueCents));
-  const manyDays = data.range.days > 14;
   const rangeLabel =
     data.range.from === data.range.to
       ? new Date(data.range.from + "T00:00:00").toLocaleDateString("en-PH", {
@@ -194,38 +198,51 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Revenue chart */}
+      {/* Summary chart: revenue vs expenses per day, with capital reference */}
       <div className="rounded-2xl border border-stone-200 bg-surface p-5 shadow-sm">
-        <h2 className="mb-4 font-bold text-stone-800">Revenue — {rangeLabel}</h2>
-        <div
-          className={`flex items-end ${manyDays ? "gap-0.5" : "gap-2"}`}
-          style={{ height: 180 }}
-        >
-          {data.range.series.map((s) => {
-            const h = Math.round((s.revenueCents / maxBar) * 150);
-            const d = new Date(s.date + "T00:00:00");
-            const label = manyDays
-              ? d.toLocaleDateString("en-PH", { day: "numeric" })
-              : d.toLocaleDateString("en-PH", { weekday: "short" });
-            return (
-              <div key={s.date} className="flex flex-1 flex-col items-center gap-1">
-                {!manyDays && (
-                  <span className="text-[10px] text-stone-400">
-                    {s.revenueCents > 0 ? formatPeso(s.revenueCents) : ""}
-                  </span>
-                )}
-                <div
-                  className="w-full rounded-t-md bg-brand transition-all"
-                  style={{ height: Math.max(4, h) }}
-                  title={`${s.date}: ${formatPeso(s.revenueCents)} (${s.count} sale${s.count === 1 ? "" : "s"})`}
-                />
-                <span className="text-[10px] font-medium text-stone-500 sm:text-xs">
-                  {label}
-                </span>
-              </div>
-            );
-          })}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-bold text-stone-800">
+            Revenue · Expenses · Capital
+          </h2>
+          <div className="flex rounded-lg border border-stone-200 p-0.5">
+            {(["bar", "line"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setChartType(t)}
+                className={`rounded-md px-3 py-1 text-xs font-semibold capitalize transition ${
+                  chartType === t
+                    ? "bg-brand text-white"
+                    : "text-stone-500 hover:text-brand-dark"
+                }`}
+              >
+                {t} chart
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Legend + totals */}
+        <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+          <LegendDot color="var(--color-brand)" label="Revenue" value={formatPeso(data.range.revenueCents)} />
+          <LegendDot color="#f59e0b" label="Expenses" value={formatPeso(data.range.expenseCents)} />
+          <span className="flex items-center gap-1.5">
+            <span className="font-medium text-stone-500">Net</span>
+            <span className={`font-bold ${data.range.netCents < 0 ? "text-red-600" : "text-stone-800"}`}>
+              {formatPeso(data.range.netCents)}
+            </span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="font-medium text-stone-500">Capital</span>
+            <span className="font-bold text-stone-800">
+              {formatPeso(data.inventory.capitalCents)}
+            </span>
+          </span>
+        </div>
+
+        <TrendChart series={data.range.series} mode={chartType} days={data.range.days} />
+        <p className="mt-2 text-[11px] text-stone-400">
+          Bars/lines show daily revenue (gold) vs expenses (amber) for {rangeLabel}. Capital is your current total puhunan.
+        </p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -285,6 +302,119 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function LegendDot({
+  color,
+  label,
+  value,
+}: {
+  color: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span
+        className="inline-block h-2.5 w-2.5 rounded-full"
+        style={{ background: color }}
+      />
+      <span className="font-medium text-stone-500">{label}</span>
+      <span className="font-bold text-stone-800">{value}</span>
+    </span>
+  );
+}
+
+function TrendChart({
+  series,
+  mode,
+  days,
+}: {
+  series: { date: string; revenueCents: number; expenseCents: number }[];
+  mode: "bar" | "line";
+  days: number;
+}) {
+  const manyDays = days > 14;
+  const maxVal = Math.max(
+    1,
+    ...series.map((s) => Math.max(s.revenueCents, s.expenseCents)),
+  );
+  const dayLabel = (date: string) => {
+    const d = new Date(date + "T00:00:00");
+    return manyDays
+      ? d.toLocaleDateString("en-PH", { day: "numeric" })
+      : d.toLocaleDateString("en-PH", { weekday: "short" });
+  };
+
+  if (mode === "line") {
+    const W = 100;
+    const H = 40;
+    const n = series.length;
+    const x = (i: number) => (n <= 1 ? W / 2 : (i / (n - 1)) * W);
+    const y = (c: number) => H - (c / maxVal) * (H - 2) - 1;
+    const line = (key: "revenueCents" | "expenseCents") =>
+      series.map((s, i) => `${x(i).toFixed(2)},${y(s[key]).toFixed(2)}`).join(" ");
+    return (
+      <div style={{ height: 180 }} className="flex flex-col">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="none"
+          className="w-full flex-1"
+        >
+          <polyline
+            points={line("revenueCents")}
+            fill="none"
+            stroke="var(--color-brand)"
+            strokeWidth="0.9"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+          <polyline
+            points={line("expenseCents")}
+            fill="none"
+            stroke="#f59e0b"
+            strokeWidth="0.9"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+        <div className="mt-1 flex justify-between text-[10px] text-stone-400">
+          <span>{series[0] ? dayLabel(series[0].date) : ""}</span>
+          <span>{series[n - 1] ? dayLabel(series[n - 1].date) : ""}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Bar mode — grouped revenue/expense bars per day.
+  return (
+    <div className={`flex items-end ${manyDays ? "gap-0.5" : "gap-2"}`} style={{ height: 180 }}>
+      {series.map((s) => (
+        <div key={s.date} className="flex flex-1 flex-col items-center gap-1">
+          <div
+            className="flex w-full items-end justify-center gap-0.5"
+            style={{ height: 150 }}
+          >
+            <div
+              className="w-1/2 rounded-t bg-brand transition-all"
+              style={{ height: Math.max(2, (s.revenueCents / maxVal) * 150) }}
+              title={`${s.date} · Revenue ${formatPeso(s.revenueCents)}`}
+            />
+            <div
+              className="w-1/2 rounded-t bg-amber-500 transition-all"
+              style={{ height: Math.max(2, (s.expenseCents / maxVal) * 150) }}
+              title={`${s.date} · Expenses ${formatPeso(s.expenseCents)}`}
+            />
+          </div>
+          <span className="text-[10px] font-medium text-stone-500 sm:text-xs">
+            {dayLabel(s.date)}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

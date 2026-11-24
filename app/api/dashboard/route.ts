@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     topGroups,
     totalProducts,
     rawMaterials,
-    expenseAgg,
+    rangeExpenses,
   ] = await Promise.all([
     prisma.sale.findMany({
       where: { createdAt: { gte, lt } },
@@ -82,16 +82,21 @@ export async function GET(req: NextRequest) {
           unit: true,
         },
       }),
-      prisma.expense.aggregate({
+      prisma.expense.findMany({
         where: { date: { gte, lt } },
-        _sum: { amountCents: true },
+        select: { date: true, amountCents: true },
       }),
     ]);
 
   // Daily buckets across the whole range (oldest → newest).
-  const buckets: { date: string; revenueCents: number; count: number }[] = [];
+  const buckets: {
+    date: string;
+    revenueCents: number;
+    expenseCents: number;
+    count: number;
+  }[] = [];
   for (let d = from; d <= to; d = addDaysKey(d, 1)) {
-    buckets.push({ date: d, revenueCents: 0, count: 0 });
+    buckets.push({ date: d, revenueCents: 0, expenseCents: 0, count: 0 });
   }
   const byKey = new Map(buckets.map((b) => [b.date, b]));
 
@@ -106,6 +111,14 @@ export async function GET(req: NextRequest) {
     }
     rangeRevenueCents += sale.totalCents;
     rangeCount += 1;
+  }
+
+  let expenseCents = 0;
+  for (const e of rangeExpenses) {
+    const key = manilaDayKey(e.date);
+    const bucket = byKey.get(key);
+    if (bucket) bucket.expenseCents += e.amountCents;
+    expenseCents += e.amountCents;
   }
 
   // Low stock (current snapshot). Raw-linked products carry no own stock, so
@@ -146,8 +159,6 @@ export async function GET(req: NextRequest) {
   const capitalCents =
     products.reduce((sum, p) => sum + (p.capitalCents ?? 0), 0) +
     rawMaterials.reduce((sum, r) => sum + (r.capitalCents ?? 0), 0);
-
-  const expenseCents = expenseAgg._sum.amountCents ?? 0;
 
   return NextResponse.json({
     range: {
