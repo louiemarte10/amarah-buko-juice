@@ -41,7 +41,7 @@ The moment you press **Charge**:
 - A printable invoice appears — press **Print**, or **New Sale** to continue.
 - Stock for the items sold is reduced automatically.
 
-Open **Sales History** anytime and click a sale to **re-open and reprint** its invoice.
+Open **Sales History** anytime and click a sale to **re-open and reprint** its invoice. Use the **date filter** at the top — **Today / Yesterday / Last 7 days** or a **From–To** range — to review any day's sales and total. Admins can **Delete** a sale there; deleting returns its items to stock.
 
 ---
 
@@ -57,22 +57,33 @@ The **Inventory** page lists your active products with price and stock (low stoc
 
 ---
 
-## 5. Raw Materials — selling from whole buko (Admin)
+## 5. Raw Materials — your buko stock (Admin)
 
-Use **Raw Materials** when one thing you buy becomes several things you sell — e.g. you stock **whole buko** but sell **water by the pack**.
+**Raw Materials** holds the base stock you buy — your **whole buko**.
 
-1. Open the **Raw Materials** page and add your base stock, e.g. **Whole Buko** — unit `buko`, 100 on hand, with a low-stock alert (say 20).
-2. In **Inventory**, add or edit the product you sell (e.g. **Buko Water Pack**). Under **Stock source**, choose **Made from raw material**, pick **Whole Buko**, and set **Uses per sale**:
-   - **0.25** → one buko makes **4 packs**.
-   - **1** → a whole-buko product uses one buko per sale.
-3. Both can share the same buko stock. Every sale subtracts automatically — sell 4 packs and 1 buko is used up.
-4. When buko runs low, open **Raw Materials → Restock** to add more. The Dashboard flags raw materials at or below their alert level (shown with a **Raw** tag).
+1. Open the **Raw Materials** page and add **Whole Buko** — unit `buko`, how many on hand, and a low-stock alert (say 20).
+2. Selling the **whole coconut**? In **Inventory**, add/edit a product and under **Stock source** choose **Made from raw material → Whole Buko**, with **Uses per sale = 1**. Each whole-buko sale subtracts 1 buko.
+3. When you buy more, open **Raw Materials → Restock** to add. The Dashboard flags raw materials at or below their alert level (shown with a **Raw** tag).
 
-> Products **not** made from a raw material keep their own stock exactly as before (bottled drinks, sago, nata…).
+> Packs don't use a fixed ratio (yield varies), so you fill pack stock on the **Production** page — see below. Products with their own stock (bottled drinks, sago, nata…) work as normal.
 
 ---
 
-## 6. Archiving (Admin)
+## 6. Production — daily buko breakage (Admin)
+
+Because some bukos have no water, the number of packs per buko varies — so you **encode each day** what you actually produced.
+
+1. Open the **Production** page.
+2. Pick the **date**, then enter **bukos broken** (e.g. 9), **damaged** (no water), and **packs produced** (the count you got).
+3. Choose which product the packs go to (**Buko Water Pack**).
+4. **Save entry.** This **adds the packs to that product's stock** (ready to sell in the POS) and **subtracts the broken bukos** from your buko stock.
+5. The **History** table keeps every day — filter by **Today / Yesterday / 7 days** or a **date range** to backtrack. Totals show at the bottom. Delete an entry to undo its stock effects.
+
+> The daily flow: buy buko (**Raw Materials**) → break & count packs (**Production**) → sell packs (**Point of Sale**) → review by day (**Sales History**).
+
+---
+
+## 7. Archiving (Admin)
 
 Archiving is a safe alternative to deleting.
 
@@ -82,7 +93,7 @@ Archiving is a safe alternative to deleting.
 
 ---
 
-## 7. Categories & Suppliers (Admin)
+## 8. Categories & Suppliers (Admin)
 
 - **Categories** — group products (e.g. Buko Drinks, Add-ons). Assign them when adding/editing a product.
 - **Suppliers** — track where stock comes from, with contact person, phone and email.
@@ -90,7 +101,7 @@ Archiving is a safe alternative to deleting.
 
 ---
 
-## 8. Dashboard (Admin)
+## 9. Dashboard (Admin)
 
 The **Dashboard** shows the day at a glance:
 
@@ -100,7 +111,7 @@ The **Dashboard** shows the day at a glance:
 
 ---
 
-## 9. Staff & Roles (Admin)
+## 10. Staff & Roles (Admin)
 
 On the **Staff** page:
 

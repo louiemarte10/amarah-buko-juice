@@ -55,6 +55,21 @@ export type Product = {
   } | null;
 };
 
+export type ProductionLog = {
+  id: string;
+  date: string;
+  bukosBroken: number;
+  damaged: number;
+  packsProduced: number;
+  note: string | null;
+  createdAt: string;
+  rawMaterialId: string | null;
+  productId: string | null;
+  rawMaterial?: { id: string; name: string; unit: string } | null;
+  product?: { id: string; name: string; unit: string } | null;
+  createdBy?: { id: string; name: string } | null;
+};
+
 export type RawMaterial = {
   id: string;
   name: string;

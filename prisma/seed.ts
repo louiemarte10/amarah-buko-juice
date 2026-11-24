@@ -109,10 +109,11 @@ async function main() {
     await prisma.product.create({ data: { ...p, lowStockThreshold: 10 } });
   }
 
-  // Two sellable products from the Whole Buko raw material, both drawing from
-  // the same buko stock:
-  //   • Buko Water (Pack) — 0.25 buko each (1 buko = 4 packs), ₱25
-  //   • Whole Buko — 1 buko each (sell the whole coconut), ₱50
+  // Two sellable products:
+  //   • Buko Water (Pack) — a normal stocked product; its stock is filled by the
+  //     daily Production (breakage) encode, since the pack yield per buko varies.
+  //   • Whole Buko — sold as whole coconuts, drawing 1 buko per sale from the
+  //     shared raw stock.
   await prisma.product.createMany({
     data: [
       {
@@ -120,13 +121,11 @@ async function main() {
         sku: "BUKO-PACK",
         priceCents: 2500,
         costCents: 300,
-        stock: 0, // derived from the raw material
+        stock: 0, // filled via Production encode
         lowStockThreshold: 10,
         unit: "pack",
         categoryId: bukoDrinks.id,
         supplierId: farm.id,
-        rawMaterialId: wholeBuko.id,
-        rawUsage: 0.25,
       },
       {
         name: "Whole Buko",

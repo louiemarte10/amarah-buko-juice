@@ -7,7 +7,20 @@ import Receipt from "@/components/Receipt";
 import { SkeletonRows } from "@/components/Skeleton";
 import ConfirmModal, { type ConfirmState } from "@/components/ConfirmModal";
 
+function todayStr(): string {
+  const d = new Date();
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+function addDays(ymd: string, n: number): string {
+  const d = new Date(ymd + "T00:00:00");
+  d.setDate(d.getDate() + n);
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
 export default function SalesPage() {
+  const today = todayStr();
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Sale | null>(null);
@@ -15,30 +28,63 @@ export default function SalesPage() {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
+  // Date filter
+  const [from, setFrom] = useState(addDays(today, -6));
+  const [to, setTo] = useState(today);
+  const [allDates, setAllDates] = useState(true);
+
   async function load() {
-    const { sales } = await api.get<{ sales: Sale[] }>("/api/sales?limit=100");
+    const qs = allDates ? "?limit=500" : `?from=${from}&to=${to}&limit=500`;
+    const { sales } = await api.get<{ sales: Sale[] }>(`/api/sales${qs}`);
     setSales(sales);
   }
 
   useEffect(() => {
     (async () => {
       try {
-        const [, me] = await Promise.all([
-          load(),
-          api
-            .get<{ user: { role: Role } }>("/api/auth/me")
-            .catch(() => ({ user: { role: "CASHIER" as Role } })),
-        ]);
+        const me = await api
+          .get<{ user: { role: Role } }>("/api/auth/me")
+          .catch(() => ({ user: { role: "CASHIER" as Role } }));
         setRole(me.user.role);
+        await load();
       } finally {
         setLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!loading) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [from, to, allDates]);
 
   const isAdmin = role === "ADMIN";
   const totalShown = sales.reduce((s, x) => s + x.totalCents, 0);
   const cols = isAdmin ? 7 : 6;
+
+  const rangeLabel = allDates
+    ? "All dates"
+    : from === to
+      ? new Date(from + "T00:00:00").toLocaleDateString("en-PH", {
+          dateStyle: "full",
+        })
+      : `${new Date(from + "T00:00:00").toLocaleDateString("en-PH", { dateStyle: "medium" })} – ${new Date(to + "T00:00:00").toLocaleDateString("en-PH", { dateStyle: "medium" })}`;
+
+  function setQuick(kind: "today" | "yesterday" | "week" | "all") {
+    if (kind === "all") return setAllDates(true);
+    setAllDates(false);
+    if (kind === "today") {
+      setFrom(today);
+      setTo(today);
+    } else if (kind === "yesterday") {
+      setFrom(addDays(today, -1));
+      setTo(addDays(today, -1));
+    } else {
+      setFrom(addDays(today, -6));
+      setTo(today);
+    }
+  }
 
   function requestDelete(s: Sale) {
     setConfirm({
@@ -67,11 +113,48 @@ export default function SalesPage() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold text-stone-800">Sales History</h1>
         <p className="text-sm text-stone-500">
-          {sales.length} sales · {formatPeso(totalShown)}
+          {rangeLabel} · <strong className="text-stone-700">{sales.length}</strong>{" "}
+          sales · <strong className="text-stone-700">{formatPeso(totalShown)}</strong>
         </p>
+      </div>
+
+      {/* Date filter */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Quick label="Today" on={!allDates && from === today && to === today} onClick={() => setQuick("today")} />
+        <Quick
+          label="Yesterday"
+          on={!allDates && from === addDays(today, -1) && to === addDays(today, -1)}
+          onClick={() => setQuick("yesterday")}
+        />
+        <Quick label="Last 7 days" on={!allDates && from === addDays(today, -6) && to === today} onClick={() => setQuick("week")} />
+        <Quick label="All" on={allDates} onClick={() => setQuick("all")} />
+        <div className="flex items-center gap-1 rounded-lg border border-stone-200 bg-surface px-2 py-1">
+          <input
+            type="date"
+            value={from}
+            max={to}
+            onChange={(e) => {
+              setAllDates(false);
+              setFrom(e.target.value);
+            }}
+            className="rounded px-1 py-0.5 text-xs outline-none focus:text-brand-dark"
+          />
+          <span className="text-xs text-stone-400">to</span>
+          <input
+            type="date"
+            value={to}
+            min={from}
+            max={today}
+            onChange={(e) => {
+              setAllDates(false);
+              setTo(e.target.value);
+            }}
+            className="rounded px-1 py-0.5 text-xs outline-none focus:text-brand-dark"
+          />
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-stone-200 bg-surface shadow-sm">
@@ -93,7 +176,7 @@ export default function SalesPage() {
             ) : sales.length === 0 ? (
               <tr>
                 <td colSpan={cols} className="px-4 py-8 text-center text-stone-400">
-                  No sales yet.
+                  No sales in this range.
                 </td>
               </tr>
             ) : (
@@ -160,5 +243,28 @@ export default function SalesPage() {
         onClose={() => setConfirm(null)}
       />
     </div>
+  );
+}
+
+function Quick({
+  label,
+  on,
+  onClick,
+}: {
+  label: string;
+  on: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+        on
+          ? "border-brand bg-brand text-white"
+          : "border-stone-300 bg-surface text-stone-600 hover:border-brand hover:text-brand-dark"
+      }`}
+    >
+      {label}
+    </button>
   );
 }

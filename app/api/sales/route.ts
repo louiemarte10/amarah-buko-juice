@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { unauthorized, badRequest } from "@/lib/api";
 import { pesosToCents } from "@/lib/money";
+import { manilaRangeUTC } from "@/lib/date";
 
 type CartItem = { productId: string; quantity: number };
 
@@ -19,9 +20,15 @@ export async function GET(req: NextRequest) {
   if (!user) return unauthorized();
 
   const { searchParams } = new URL(req.url);
-  const limit = Math.min(200, Math.max(1, Number(searchParams.get("limit") ?? 50)));
+  const limit = Math.min(500, Math.max(1, Number(searchParams.get("limit") ?? 50)));
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+  // Optional Manila-day range filter (inclusive) on createdAt.
+  const where =
+    from && to ? { createdAt: manilaRangeUTC(from, to) } : {};
 
   const sales = await prisma.sale.findMany({
+    where,
     include: {
       items: true,
       cashier: { select: { id: true, name: true } },

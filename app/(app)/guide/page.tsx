@@ -104,24 +104,44 @@ const STEPS: Step[] = [
   {
     id: "raw",
     label: "Raw materials",
-    title: "Selling from whole buko",
+    title: "Your buko stock",
     blocks: [
       {
         kind: "p",
-        text: "Use **Raw Materials** when one thing you buy becomes several things you sell. Classic example: you stock **whole buko**, but you sell **water by the pack**.",
+        text: "**Raw Materials** holds the base stock you buy — your **whole buko**. Add it once, then **Restock** whenever you buy more.",
       },
       {
         kind: "list",
         items: [
-          "On the **Raw Materials** page, add your base stock — e.g. **Whole Buko**, 100 on hand.",
-          "In **Inventory**, add or edit a product (e.g. **Buko Water Pack**), pick **Made from raw material → Whole Buko**, and set **Uses per sale** to **0.25** (because 1 buko makes 4 packs).",
-          "You can also sell a **Whole Buko** product that uses **1** per sale — both draw from the same buko stock.",
-          "Each sale automatically subtracts from the buko stock: sell 4 packs → 1 buko gone.",
+          "Add **Whole Buko** (unit `buko`) with how many you have on hand and a low-stock alert.",
+          "Sell the **whole coconut**? Make a product that uses a **fixed** amount per sale — e.g. **Whole Buko** uses **1** buko per sale (set this in Inventory → Stock source → Made from raw material).",
+          "For packs, the yield varies (some bukos have no water), so you encode those on the **Production** page instead — see the next step.",
+          "**Restock** adds more buko; the Dashboard warns you when buko runs low.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "production",
+    label: "Production",
+    title: "Encode your daily breakage",
+    blocks: [
+      {
+        kind: "p",
+        text: "Pack yield isn't fixed — a buko with no water is **damage** — so each day you **encode** what you actually made on the **Production** page.",
+      },
+      {
+        kind: "list",
+        items: [
+          "Pick the **date**, enter **bukos broken** (e.g. 9), **damaged** (no water), and the **packs produced** you counted.",
+          "Choose which product the packs go to (**Buko Water Pack**).",
+          "Saving **adds the packs to that product's stock** (ready to sell) and **subtracts the broken bukos** from your buko stock.",
+          "The **History** table keeps every day — filter by Today, Yesterday, 7 days, or a date range to backtrack.",
         ],
       },
       {
         kind: "note",
-        text: "Running low? Open **Raw Materials** and hit **Restock** to add more buko. The Dashboard warns you when buko falls to your alert level.",
+        text: "So the flow is: buy buko (**Raw Materials**) → break & count packs (**Production**) → sell packs (**Point of Sale**).",
       },
     ],
   },
