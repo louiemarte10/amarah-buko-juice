@@ -44,6 +44,7 @@ type Dashboard = {
     totalProducts: number;
     activeProducts: number;
     retailValueCents: number;
+    costValueCents: number;
     lowStockCount: number;
   };
 };
@@ -156,20 +157,20 @@ export default function DashboardPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
-          label="Sales (range)"
+          label="Revenue (range)"
           value={formatPeso(data.range.revenueCents)}
           sub={rangeLabel}
           accent
         />
         <Stat
+          label="Capital on hand"
+          value={formatPeso(data.inventory.costValueCents)}
+          sub="cost of stock (puhunan)"
+        />
+        <Stat
           label="Transactions"
           value={String(data.range.count)}
           sub={`over ${data.range.days} day${data.range.days === 1 ? "" : "s"}`}
-        />
-        <Stat
-          label="Inventory Value"
-          value={formatPeso(data.inventory.retailValueCents)}
-          sub={`${data.inventory.activeProducts} active items`}
         />
         <Stat
           label="Low Stock"

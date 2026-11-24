@@ -189,24 +189,38 @@ export default function RawMaterialsPage() {
         Selling draws from this shared stock automatically.
       </p>
 
+      {/* Capital summary (money tied up in raw stock on hand). */}
+      <div className="mb-4 inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-brand/30 bg-brand-light px-4 py-2.5">
+        <span className="text-sm font-medium text-brand-dark">
+          Total capital on hand (puhunan)
+        </span>
+        <span className="text-xl font-extrabold text-brand-dark">
+          {formatPeso(
+            items.reduce((s, r) => s + Math.round(r.costCents * r.stock), 0),
+          )}
+        </span>
+        <span className="text-xs text-stone-500">= cost/unit × on hand</span>
+      </div>
+
       <div className="overflow-x-auto rounded-xl border border-stone-200 bg-surface shadow-sm">
-        <table className="w-full min-w-[720px] text-sm">
+        <table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wide text-stone-400">
               <th className="px-4 py-3">Raw material</th>
               <th className="px-4 py-3">Supplier</th>
               <th className="px-4 py-3 text-right">Cost / unit</th>
               <th className="px-4 py-3 text-right">On hand</th>
+              <th className="px-4 py-3 text-right">Capital</th>
               <th className="px-4 py-3 text-center">Used by</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <SkeletonRows rows={5} cols={6} />
+              <SkeletonRows rows={5} cols={7} />
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-stone-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-stone-400">
                   No raw materials yet. Add one (e.g. &quot;Whole Buko&quot;).
                 </td>
               </tr>
@@ -246,6 +260,11 @@ export default function RawMaterialsPage() {
                       >
                         {+r.stock.toFixed(2)} {r.unit}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold text-stone-700">
+                      {r.costCents > 0
+                        ? formatPeso(Math.round(r.costCents * r.stock))
+                        : "—"}
                     </td>
                     <td className="px-4 py-3 text-center text-stone-500">
                       {r._count?.products ?? 0}
