@@ -59,13 +59,38 @@ model Category {
 }
 
 model Supplier {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  contact   String?
-  phone     String?
-  email     String?
-  createdAt DateTime  @default(now())
-  products  Product[]
+  id           String        @id @default(cuid())
+  name         String        @unique
+  contact      String?
+  phone        String?
+  email        String?
+  createdAt    DateTime      @default(now())
+  products     Product[]
+  rawMaterials RawMaterial[]
+}
+
+// A raw/base item kept in whole-unit stock (e.g. "Whole Buko"). One raw item
+// can feed several sellable Products, each consuming a fraction of it per sale
+// (see Product.rawUsage). Stock is a Float because products may use fractions
+// (a water pack = 0.25 buko). Products NOT linked to a raw item keep using
+// their own Product.stock exactly as before.
+model RawMaterial {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  unit              String   @default("pc") // buko, kg, pack, etc.
+  stock             Float    @default(0) // whole units on hand
+  lowStockThreshold Float    @default(0)
+  costCents         Int      @default(0) // cost per whole unit, in centavos
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  products Product[]
+
+  @@index([supplierId])
 }
 
 model Product {
@@ -87,10 +112,18 @@ model Product {
   supplierId String?
   supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
+  // Optional: this product is made from a raw item. When set, availability and
+  // stock decrement come from the raw item (quantity sold × rawUsage), and the
+  // product's own `stock` field is ignored.
+  rawMaterialId String?
+  rawMaterial   RawMaterial? @relation(fields: [rawMaterialId], references: [id], onDelete: SetNull)
+  rawUsage      Float        @default(1) // raw units consumed per unit sold
+
   saleItems SaleItem[]
 
   @@index([categoryId])
   @@index([supplierId])
+  @@index([rawMaterialId])
 }
 
 model Sale {

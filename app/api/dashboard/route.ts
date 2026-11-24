@@ -29,32 +29,45 @@ export async function GET() {
   const weekStart = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
   const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  const [weekSales, products, topGroups, totalProducts] = await Promise.all([
-    prisma.sale.findMany({
-      where: { createdAt: { gte: weekStart } },
-      select: { createdAt: true, totalCents: true },
-    }),
-    prisma.product.findMany({
-      where: { active: true },
-      select: {
-        id: true,
-        name: true,
-        stock: true,
-        lowStockThreshold: true,
-        priceCents: true,
-        costCents: true,
-        unit: true,
-      },
-    }),
-    prisma.saleItem.groupBy({
-      by: ["productId", "productName"],
-      where: { sale: { createdAt: { gte: monthAgo } } },
-      _sum: { quantity: true, lineCents: true },
-      orderBy: { _sum: { quantity: "desc" } },
-      take: 5,
-    }),
-    prisma.product.count(),
-  ]);
+  const [weekSales, products, topGroups, totalProducts, rawMaterials] =
+    await Promise.all([
+      prisma.sale.findMany({
+        where: { createdAt: { gte: weekStart } },
+        select: { createdAt: true, totalCents: true },
+      }),
+      prisma.product.findMany({
+        where: { active: true },
+        select: {
+          id: true,
+          name: true,
+          stock: true,
+          lowStockThreshold: true,
+          priceCents: true,
+          costCents: true,
+          unit: true,
+          rawMaterialId: true,
+        },
+      }),
+      prisma.saleItem.groupBy({
+        by: ["productId", "productName"],
+        where: { sale: { createdAt: { gte: monthAgo } } },
+        _sum: { quantity: true, lineCents: true },
+        orderBy: { _sum: { quantity: "desc" } },
+        take: 5,
+      }),
+      prisma.product.count(),
+      prisma.rawMaterial.findMany({
+        where: { active: true },
+        select: {
+          id: true,
+          name: true,
+          stock: true,
+          lowStockThreshold: true,
+          costCents: true,
+          unit: true,
+        },
+      }),
+    ]);
 
   // Today's totals
   let todayRevenueCents = 0;
@@ -81,8 +94,32 @@ export async function GET() {
     }
   }
 
-  const lowStock = products
-    .filter((p) => p.stock <= p.lowStockThreshold)
+  // Own-stock products that are low. Raw-linked products carry no own stock, so
+  // they're excluded here and represented by their raw material below.
+  const lowStockProducts = products
+    .filter((p) => p.rawMaterialId == null && p.stock <= p.lowStockThreshold)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      stock: p.stock,
+      lowStockThreshold: p.lowStockThreshold,
+      unit: p.unit,
+      kind: "product" as const,
+    }));
+
+  // Raw materials at or below their alert level (0 threshold = no alert).
+  const lowStockRaw = rawMaterials
+    .filter((r) => r.lowStockThreshold > 0 && r.stock <= r.lowStockThreshold)
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      stock: Math.round(r.stock * 100) / 100,
+      lowStockThreshold: r.lowStockThreshold,
+      unit: r.unit,
+      kind: "raw" as const,
+    }));
+
+  const lowStock = [...lowStockProducts, ...lowStockRaw]
     .sort((a, b) => a.stock - b.stock)
     .slice(0, 20);
 
@@ -90,10 +127,10 @@ export async function GET() {
     (sum, p) => sum + p.priceCents * p.stock,
     0,
   );
-  const inventoryCostCents = products.reduce(
-    (sum, p) => sum + p.costCents * p.stock,
-    0,
-  );
+  // Cost on hand = own-stock products' cost + raw materials' cost value.
+  const inventoryCostCents =
+    products.reduce((sum, p) => sum + p.costCents * p.stock, 0) +
+    rawMaterials.reduce((sum, r) => sum + Math.round(r.costCents * r.stock), 0);
 
   const weekRevenueCents = buckets.reduce((s, b) => s + b.revenueCents, 0);
 

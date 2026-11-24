@@ -34,6 +34,8 @@ export type Product = {
   sku: string | null;
   priceCents: number;
   costCents: number;
+  // For raw-linked products this is the DERIVED number of sellable units
+  // available (floor of rawMaterial.stock / rawUsage); otherwise own stock.
   stock: number;
   lowStockThreshold: number;
   unit: string;
@@ -42,6 +44,28 @@ export type Product = {
   supplierId: string | null;
   category?: { id: string; name: string } | null;
   supplier?: { id: string; name: string } | null;
+  rawMaterialId: string | null;
+  rawUsage: number;
+  rawMaterial?: {
+    id: string;
+    name: string;
+    unit: string;
+    stock: number;
+    lowStockThreshold: number;
+  } | null;
+};
+
+export type RawMaterial = {
+  id: string;
+  name: string;
+  unit: string;
+  stock: number;
+  lowStockThreshold: number;
+  costCents: number;
+  active: boolean;
+  supplierId: string | null;
+  supplier?: { id: string; name: string } | null;
+  _count?: { products: number };
 };
 
 export type Category = {

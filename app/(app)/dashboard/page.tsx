@@ -23,6 +23,7 @@ type Dashboard = {
     stock: number;
     lowStockThreshold: number;
     unit: string;
+    kind?: "product" | "raw";
   }[];
   inventory: {
     totalProducts: number;
@@ -162,8 +163,13 @@ export default function DashboardPage() {
                   key={p.id}
                   className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2"
                 >
-                  <span className="text-sm font-medium text-stone-700">
+                  <span className="flex items-center gap-2 text-sm font-medium text-stone-700">
                     {p.name}
+                    {p.kind === "raw" && (
+                      <span className="rounded bg-brand-light px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-dark">
+                        Raw
+                      </span>
+                    )}
                   </span>
                   <span className="text-sm font-semibold text-amber-700">
                     {p.stock} {p.unit} left

@@ -70,7 +70,14 @@ export async function POST(req: NextRequest) {
   try {
     const sale = await prisma.$transaction(async (tx) => {
       const ids = [...qtyByProduct.keys()];
-      const products = await tx.product.findMany({ where: { id: { in: ids } } });
+      const products = await tx.product.findMany({
+        where: { id: { in: ids } },
+        include: {
+          rawMaterial: {
+            select: { id: true, name: true, unit: true, stock: true },
+          },
+        },
+      });
       const byId = new Map(products.map((p) => [p.id, p]));
 
       let subtotalCents = 0;
@@ -82,16 +89,40 @@ export async function POST(req: NextRequest) {
         lineCents: number;
       }[] = [];
 
+      // Stock to decrement after all validation passes.
+      const ownStockDec = new Map<string, number>(); // productId -> qty sold
+      const rawNeed = new Map<
+        string,
+        { name: string; unit: string; stock: number; need: number }
+      >(); // rawMaterialId -> total raw units needed across the cart
+
       for (const [productId, quantity] of qtyByProduct) {
         const product = byId.get(productId);
         if (!product || !product.active) {
           throw new Error(`A product in the cart is no longer available`);
         }
-        if (product.stock < quantity) {
-          throw new Error(
-            `Not enough stock for ${product.name} (have ${product.stock}, need ${quantity})`,
-          );
+
+        if (product.rawMaterialId && product.rawMaterial) {
+          // Made from a raw item: consume quantity × rawUsage from shared stock.
+          const usage = product.rawUsage > 0 ? product.rawUsage : 1;
+          const entry = rawNeed.get(product.rawMaterialId) ?? {
+            name: product.rawMaterial.name,
+            unit: product.rawMaterial.unit,
+            stock: product.rawMaterial.stock,
+            need: 0,
+          };
+          entry.need += usage * quantity;
+          rawNeed.set(product.rawMaterialId, entry);
+        } else {
+          // Own-stock product: validate and queue its decrement.
+          if (product.stock < quantity) {
+            throw new Error(
+              `Not enough stock for ${product.name} (have ${product.stock}, need ${quantity})`,
+            );
+          }
+          ownStockDec.set(productId, quantity);
         }
+
         const lineCents = product.priceCents * quantity;
         subtotalCents += lineCents;
         saleItemsData.push({
@@ -103,6 +134,17 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      // Validate shared raw-material stock across the whole cart at once, so two
+      // products drawing on the same raw item can't together oversell it.
+      for (const [, r] of rawNeed) {
+        const need = Math.round(r.need * 1e6) / 1e6;
+        if (r.stock + 1e-9 < need) {
+          throw new Error(
+            `Not enough ${r.name} (have ${+r.stock.toFixed(2)} ${r.unit}, need ${+need.toFixed(2)} ${r.unit})`,
+          );
+        }
+      }
+
       const totalCents = Math.max(0, subtotalCents - discountCents);
       const cashCents =
         paymentMethod === "CASH" ? pesosToCents(Number(body.cash ?? 0)) : totalCents;
@@ -111,11 +153,18 @@ export async function POST(req: NextRequest) {
       }
       const changeCents = Math.max(0, cashCents - totalCents);
 
-      // Decrement stock for every product.
-      for (const data of saleItemsData) {
+      // Apply decrements: own-stock products, then shared raw materials.
+      for (const [productId, quantity] of ownStockDec) {
         await tx.product.update({
-          where: { id: data.productId },
-          data: { stock: { decrement: data.quantity } },
+          where: { id: productId },
+          data: { stock: { decrement: quantity } },
+        });
+      }
+      for (const [rawId, r] of rawNeed) {
+        const need = Math.round(r.need * 1e6) / 1e6;
+        await tx.rawMaterial.update({
+          where: { id: rawId },
+          data: { stock: { decrement: need } },
         });
       }
 

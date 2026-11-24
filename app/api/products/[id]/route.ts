@@ -44,8 +44,6 @@ export async function PATCH(
     data.priceCents = pesosToCents(price);
   }
   if (body.cost !== undefined) data.costCents = pesosToCents(Number(body.cost));
-  if (body.stock !== undefined)
-    data.stock = Math.max(0, Math.trunc(Number(body.stock)));
   if (body.lowStockThreshold !== undefined)
     data.lowStockThreshold = Math.max(0, Math.trunc(Number(body.lowStockThreshold)));
   if (body.unit !== undefined) data.unit = String(body.unit).trim() || "pc";
@@ -54,6 +52,24 @@ export async function PATCH(
     data.categoryId = body.categoryId ? String(body.categoryId) : null;
   if (body.supplierId !== undefined)
     data.supplierId = body.supplierId ? String(body.supplierId) : null;
+
+  // Raw-material link. When clearing it, fall back to own-stock tracking.
+  let rawLinked = existing.rawMaterialId != null;
+  if (body.rawMaterialId !== undefined) {
+    const rawMaterialId = body.rawMaterialId ? String(body.rawMaterialId) : null;
+    data.rawMaterialId = rawMaterialId;
+    rawLinked = rawMaterialId != null;
+    if (!rawMaterialId) data.rawUsage = 1;
+  }
+  if (body.rawUsage !== undefined && rawLinked) {
+    data.rawUsage = Math.max(0.0001, Number(body.rawUsage) || 1);
+  }
+
+  // `stock` only applies to own-stock products; a raw-linked product derives
+  // its availability from the raw item, so ignore any stock sent for it.
+  if (body.stock !== undefined && !rawLinked)
+    data.stock = Math.max(0, Math.trunc(Number(body.stock)));
+  if (rawLinked) data.stock = 0;
 
   try {
     const product = await prisma.product.update({ where: { id }, data });

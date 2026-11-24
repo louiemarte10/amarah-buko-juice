@@ -13,6 +13,7 @@ const NAV: NavItem[] = [
   { href: "/pos", label: "Point of Sale", icon: "🧾" },
   { href: "/dashboard", label: "Dashboard", icon: "📊", admin: true },
   { href: "/inventory", label: "Inventory", icon: "📦", admin: true },
+  { href: "/raw-materials", label: "Raw Materials", icon: "🥥", admin: true },
   { href: "/archive", label: "Archived", icon: "🗃️", admin: true },
   { href: "/categories", label: "Categories", icon: "🏷️", admin: true },
   { href: "/suppliers", label: "Suppliers", icon: "🚚", admin: true },

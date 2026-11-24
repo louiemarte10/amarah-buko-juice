@@ -77,6 +77,20 @@ async function main() {
     data: { name: "Packaging Supplier", contact: "QC Plastics" },
   });
 
+  // --- Raw materials -------------------------------------------------------
+  // A whole buko is stocked as one raw unit; sellable products draw fractions
+  // of it (see "Buko Water (Pack)" below, which uses 0.25 buko each).
+  const wholeBuko = await prisma.rawMaterial.create({
+    data: {
+      name: "Whole Buko",
+      unit: "buko",
+      stock: 100,
+      lowStockThreshold: 20,
+      costCents: 1200,
+      supplierId: farm.id,
+    },
+  });
+
   // --- Products (prices in centavos) --------------------------------------
   const products = [
     { name: "Buko Juice (Regular)", priceCents: 3500, costCents: 1500, stock: 80, unit: "cup", categoryId: bukoDrinks.id, supplierId: farm.id, sku: "BUKO-REG" },
@@ -95,7 +109,27 @@ async function main() {
     await prisma.product.create({ data: { ...p, lowStockThreshold: 10 } });
   }
 
-  console.log(`Seeded ${products.length} products, 4 categories, 2 suppliers, 2 users.`);
+  // A sellable product made from the Whole Buko raw material: one buko yields
+  // 4 water packs (0.25 buko each), each sold at ₱25.
+  await prisma.product.create({
+    data: {
+      name: "Buko Water (Pack)",
+      sku: "BUKO-PACK",
+      priceCents: 2500,
+      costCents: 300,
+      stock: 0, // derived from the raw material
+      lowStockThreshold: 10,
+      unit: "pack",
+      categoryId: bukoDrinks.id,
+      supplierId: farm.id,
+      rawMaterialId: wholeBuko.id,
+      rawUsage: 0.25,
+    },
+  });
+
+  console.log(
+    `Seeded ${products.length + 1} products, 1 raw material, 4 categories, 2 suppliers, 2 users.`,
+  );
 }
 
 main()

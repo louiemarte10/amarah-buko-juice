@@ -57,7 +57,22 @@ The **Inventory** page lists your active products with price and stock (low stoc
 
 ---
 
-## 5. Archiving (Admin)
+## 5. Raw Materials — selling from whole buko (Admin)
+
+Use **Raw Materials** when one thing you buy becomes several things you sell — e.g. you stock **whole buko** but sell **water by the pack**.
+
+1. Open the **Raw Materials** page and add your base stock, e.g. **Whole Buko** — unit `buko`, 100 on hand, with a low-stock alert (say 20).
+2. In **Inventory**, add or edit the product you sell (e.g. **Buko Water Pack**). Under **Stock source**, choose **Made from raw material**, pick **Whole Buko**, and set **Uses per sale**:
+   - **0.25** → one buko makes **4 packs**.
+   - **1** → a whole-buko product uses one buko per sale.
+3. Both can share the same buko stock. Every sale subtracts automatically — sell 4 packs and 1 buko is used up.
+4. When buko runs low, open **Raw Materials → Restock** to add more. The Dashboard flags raw materials at or below their alert level (shown with a **Raw** tag).
+
+> Products **not** made from a raw material keep their own stock exactly as before (bottled drinks, sago, nata…).
+
+---
+
+## 6. Archiving (Admin)
 
 Archiving is a safe alternative to deleting.
 
@@ -67,7 +82,7 @@ Archiving is a safe alternative to deleting.
 
 ---
 
-## 6. Categories & Suppliers (Admin)
+## 7. Categories & Suppliers (Admin)
 
 - **Categories** — group products (e.g. Buko Drinks, Add-ons). Assign them when adding/editing a product.
 - **Suppliers** — track where stock comes from, with contact person, phone and email.
@@ -75,7 +90,7 @@ Archiving is a safe alternative to deleting.
 
 ---
 
-## 7. Dashboard (Admin)
+## 8. Dashboard (Admin)
 
 The **Dashboard** shows the day at a glance:
 
@@ -85,7 +100,7 @@ The **Dashboard** shows the day at a glance:
 
 ---
 
-## 8. Staff & Roles (Admin)
+## 9. Staff & Roles (Admin)
 
 On the **Staff** page:
 

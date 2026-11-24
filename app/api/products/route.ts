@@ -35,11 +35,32 @@ export async function GET(req: NextRequest) {
     include: {
       category: { select: { id: true, name: true } },
       supplier: { select: { id: true, name: true } },
+      rawMaterial: {
+        select: {
+          id: true,
+          name: true,
+          unit: true,
+          stock: true,
+          lowStockThreshold: true,
+        },
+      },
     },
     orderBy: { name: "asc" },
   });
 
-  return NextResponse.json({ products });
+  // For raw-linked products, report the DERIVED number of sellable units
+  // available (how many whole raw units will divide into) so the POS and
+  // inventory show real availability from the shared raw stock.
+  const shaped = products.map((p) => {
+    if (p.rawMaterialId && p.rawMaterial) {
+      const usage = p.rawUsage > 0 ? p.rawUsage : 1;
+      const available = Math.floor((p.rawMaterial.stock + 1e-9) / usage);
+      return { ...p, stock: Math.max(0, available) };
+    }
+    return p;
+  });
+
+  return NextResponse.json({ products: shaped });
 }
 
 export async function POST(req: NextRequest) {
@@ -68,6 +89,11 @@ export async function POST(req: NextRequest) {
     if (existing) return badRequest("A product with that SKU already exists");
   }
 
+  const rawMaterialId = body.rawMaterialId ? String(body.rawMaterialId) : null;
+  const rawUsage = rawMaterialId
+    ? Math.max(0.0001, Number(body.rawUsage ?? 1) || 1)
+    : 1;
+
   try {
     const product = await prisma.product.create({
       data: {
@@ -75,7 +101,10 @@ export async function POST(req: NextRequest) {
         sku,
         priceCents: pesosToCents(price),
         costCents: pesosToCents(Number(body.cost ?? 0)),
-        stock: Math.max(0, Math.trunc(Number(body.stock ?? 0))),
+        // Raw-linked products don't track their own stock.
+        stock: rawMaterialId
+          ? 0
+          : Math.max(0, Math.trunc(Number(body.stock ?? 0))),
         lowStockThreshold: Math.max(
           0,
           Math.trunc(Number(body.lowStockThreshold ?? 10)),
@@ -84,6 +113,8 @@ export async function POST(req: NextRequest) {
         active: body.active === undefined ? true : Boolean(body.active),
         categoryId: body.categoryId ? String(body.categoryId) : null,
         supplierId: body.supplierId ? String(body.supplierId) : null,
+        rawMaterialId,
+        rawUsage,
       },
     });
     return NextResponse.json({ product }, { status: 201 });

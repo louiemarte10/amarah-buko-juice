@@ -5,6 +5,7 @@ import {
   api,
   type Category,
   type Product,
+  type RawMaterial,
   type Supplier,
 } from "@/lib/client";
 import { centsToPesos, formatPeso } from "@/lib/money";
@@ -23,6 +24,9 @@ type FormState = {
   categoryId: string;
   supplierId: string;
   active: boolean;
+  // Stock source: "" = own stock, otherwise the raw material id it's made from.
+  rawMaterialId: string;
+  rawUsage: string;
 };
 
 const EMPTY: FormState = {
@@ -36,12 +40,15 @@ const EMPTY: FormState = {
   categoryId: "",
   supplierId: "",
   active: true,
+  rawMaterialId: "",
+  rawUsage: "1",
 };
 
 export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState<FormState | null>(null);
@@ -54,14 +61,16 @@ export default function InventoryPage() {
   async function load() {
     setLoading(true);
     try {
-      const [p, c, s] = await Promise.all([
+      const [p, c, s, r] = await Promise.all([
         api.get<{ products: Product[] }>("/api/products?status=active"),
         api.get<{ categories: Category[] }>("/api/categories"),
         api.get<{ suppliers: Supplier[] }>("/api/suppliers"),
+        api.get<{ rawMaterials: RawMaterial[] }>("/api/raw-materials"),
       ]);
       setProducts(p.products);
       setCategories(c.categories);
       setSuppliers(s.suppliers);
+      setRawMaterials(r.rawMaterials);
       setSelected(new Set());
     } finally {
       setLoading(false);
@@ -91,6 +100,8 @@ export default function InventoryPage() {
       categoryId: p.categoryId ?? "",
       supplierId: p.supplierId ?? "",
       active: p.active,
+      rawMaterialId: p.rawMaterialId ?? "",
+      rawUsage: String(p.rawUsage ?? 1),
     });
   }
 
@@ -99,17 +110,21 @@ export default function InventoryPage() {
     setSaving(true);
     setConfirmLoading(true);
     setError("");
+    const fromRaw = !!form.rawMaterialId;
     const payload = {
       name: form.name,
       sku: form.sku || null,
       price: parseFloat(form.price) || 0,
       cost: parseFloat(form.cost) || 0,
-      stock: parseInt(form.stock) || 0,
+      // Own-stock products send their stock; raw-linked ones derive it.
+      stock: fromRaw ? 0 : parseInt(form.stock) || 0,
       lowStockThreshold: parseInt(form.lowStockThreshold) || 0,
       unit: form.unit,
       categoryId: form.categoryId || null,
       supplierId: form.supplierId || null,
       active: form.active,
+      rawMaterialId: form.rawMaterialId || null,
+      rawUsage: fromRaw ? parseFloat(form.rawUsage) || 1 : 1,
     };
     try {
       if (form.id) {
@@ -299,7 +314,13 @@ export default function InventoryPage() {
                   </td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-stone-800">{p.name}</p>
-                    {p.sku && <p className="text-xs text-stone-400">{p.sku}</p>}
+                    {p.rawMaterial ? (
+                      <p className="text-xs text-brand-dark">
+                        from {p.rawMaterial.name} · {p.rawUsage} per sale
+                      </p>
+                    ) : (
+                      p.sku && <p className="text-xs text-stone-400">{p.sku}</p>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-stone-500">
                     {p.category?.name ?? "—"}
@@ -390,24 +411,108 @@ export default function InventoryPage() {
                   className={inputCls}
                 />
               </Field>
-              <Field label="Stock">
-                <input
-                  type="number"
-                  value={form.stock}
-                  onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="Low-stock alert at">
-                <input
-                  type="number"
-                  value={form.lowStockThreshold}
-                  onChange={(e) =>
-                    setForm({ ...form, lowStockThreshold: e.target.value })
-                  }
-                  className={inputCls}
-                />
-              </Field>
+              <div className="col-span-2 rounded-xl border border-stone-200 bg-cream/50 p-3">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
+                  Stock source
+                </p>
+                <div className="mb-3 flex gap-2">
+                  <SourceBtn
+                    active={!form.rawMaterialId}
+                    onClick={() =>
+                      setForm({ ...form, rawMaterialId: "", rawUsage: "1" })
+                    }
+                  >
+                    Own stock
+                  </SourceBtn>
+                  <SourceBtn
+                    active={!!form.rawMaterialId}
+                    disabled={rawMaterials.length === 0}
+                    onClick={() =>
+                      setForm({
+                        ...form,
+                        rawMaterialId: rawMaterials[0]?.id ?? "",
+                        rawUsage: form.rawUsage || "1",
+                      })
+                    }
+                  >
+                    Made from raw material
+                  </SourceBtn>
+                </div>
+
+                {!form.rawMaterialId ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Stock">
+                      <input
+                        type="number"
+                        value={form.stock}
+                        onChange={(e) =>
+                          setForm({ ...form, stock: e.target.value })
+                        }
+                        className={inputCls}
+                      />
+                    </Field>
+                    <Field label="Low-stock alert at">
+                      <input
+                        type="number"
+                        value={form.lowStockThreshold}
+                        onChange={(e) =>
+                          setForm({ ...form, lowStockThreshold: e.target.value })
+                        }
+                        className={inputCls}
+                      />
+                    </Field>
+                  </div>
+                ) : rawMaterials.length === 0 ? (
+                  <p className="text-sm text-stone-500">
+                    No raw materials yet — add one on the Raw Materials page first.
+                  </p>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Raw material">
+                        <select
+                          value={form.rawMaterialId}
+                          onChange={(e) =>
+                            setForm({ ...form, rawMaterialId: e.target.value })
+                          }
+                          className={inputCls}
+                        >
+                          {rawMaterials.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.name} ({+r.stock.toFixed(2)} {r.unit} left)
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                      <Field label="Uses per sale">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={form.rawUsage}
+                          onChange={(e) =>
+                            setForm({ ...form, rawUsage: e.target.value })
+                          }
+                          className={inputCls}
+                        />
+                      </Field>
+                    </div>
+                    <p className="mt-2 text-xs text-stone-500">
+                      {(() => {
+                        const raw = rawMaterials.find(
+                          (r) => r.id === form.rawMaterialId,
+                        );
+                        const usage = parseFloat(form.rawUsage) || 0;
+                        if (!raw || usage <= 0)
+                          return "Set how much raw stock one sale uses.";
+                        const perRaw = Math.round((1 / usage) * 100) / 100;
+                        const avail = Math.floor(raw.stock / usage);
+                        return `1 ${raw.name} makes ${perRaw} ${form.unit || "unit"}(s). About ${avail} sellable now.`;
+                      })()}
+                    </p>
+                  </>
+                )}
+              </div>
               <Field label="Category">
                 <select
                   value={form.categoryId}
@@ -481,6 +586,33 @@ export default function InventoryPage() {
 
 const inputCls =
   "w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/30";
+
+function SourceBtn({
+  active,
+  disabled,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${
+        active
+          ? "border-brand bg-brand text-white"
+          : "border-stone-300 bg-surface text-stone-600 hover:border-brand hover:text-brand-dark"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
 function Field({
   label,
